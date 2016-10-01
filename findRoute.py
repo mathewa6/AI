@@ -19,16 +19,21 @@ def getFileData(filename):
     lines = []
     with open(filename) as f:
         for line in f:
-            print(line.strip().split())
+            #print(line.strip().split())
             lines.append(line.strip())
     return lines
 
 class City(object):
-    def __init__(self):
-        pass
+    def __init__(self, line):
+        (name, loc) = line.split()
+        (x,y) = loc.strip("()").split(",")
+        self.name = name
+        self.x = int(x)
+        self.y = int(y)
+        self.hub = True if "*" in self.name else False
 
-    def __string__(self):
-        return "{} ({},{})".format(self.name, self.x, self.y)
+    def __str__(self):
+        return "{} (x: {}, y: {})".format(self.name, self.x, self.y)
 
     def __repr__(self):
         return str(self)
@@ -40,4 +45,5 @@ class DistanceMap(object):
 all = getArguments()
 print(all)
 file = getFileData("_city")
-print(file)
+for i in file:
+    print(City(i))
