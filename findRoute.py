@@ -89,17 +89,6 @@ class City(Node):
         self.nbrs = n
         return n
 
-    def gc(self, other, pm, h):
-        pgc = self.parent.g if self.parent else 0
-        self.g = pgc + self.travelCost(other, pm , h)
-        return self.g
-
-    def hc(self, end,lcm, pm, h):
-        time = self.flightTime(end) + self.waitTime(end)
-        tcost = h * time
-        d = self.distance(end)
-        return (d*lcm)+tcost
-
     def __eq__(self,other):
         return self.idx == other.idx
 
@@ -169,29 +158,45 @@ for n in _store:
 #Calculate least cost/mile
 _least = _pmap.leastCost(_store)
 
-print(_start, _end, _pmap.price(_startidx,_endidx))
-print(_start.distance(_end))
-print(_start.flightTime(_end))
-print(_start.waitTime(_end))
-print(_start.gc(_end, _pmap, _hourly))
-print(_start.nbrs)
-print(_end.nbrs)
-print(_least)
-print(_start.gc(_end,_pmap,_hourly), _start.hc(_end,_least,_pmap,_hourly))
+#print(_start, _end, _pmap.price(_startidx,_endidx))
+#print(_start.distance(_end))
+#print(_start.flightTime(_end))
+#print(_start.waitTime(_end))
+#print(_start.gc(_end, _pmap, _hourly))
+#print(_start.nbrs)
+#print(_end.nbrs)
+#print(_least)
+#print(_start.gc(_end,_pmap,_hourly), _start.hc(_end,_least,_pmap,_hourly,_future))
 
 #Start the main algorithm
-def fc(current,other,end,l,pm,h):
-    g = current.gc(other,pm,h)
-    h = other.hc(end,l,pm,h)
+def fc(start,current,other,end,l,pm,h,f):
+    g = gc(start,current,other,pm,h)
+    h = hc(other,end,l,pm,h,f)
     return (g+h,g,h)
 
-def lowestf(cur, nodes, end, l, pm, h):
-    minf = sys.maxsize
+def gc(start,node, other, pm, h):
+    if start == node:
+        return 0
+    returng = node.travelCost(other, pm , h)
+    print("GCOST",returng)
+    return returng
+
+def hc(node, end,lcm, pm, h, f):
+    if node == end or f < 1:
+        print("YABBBAABABBABABABABAABBABABA")
+        return 0
+    time = node.flightTime(end) + node.waitTime(end)
+    tcost = h * time
+    d = node.distance(end)
+    return (d*lcm)+tcost
+
+def lowestf(start,cur, nodes, end, l, pm, h, fut):
+    minf = fc(start,cur,cur,end,l,pm,h,fut)
     ming = 0
     minn = cur
     for n in nodes:
         if n != cur:
-            f = fc(cur,n,end,l,pm,h)
+            f = fc(start,cur,n,end,l,pm,h,fut)
             if f[0] < minf:
                 minf = f
                 ming = f[1]
@@ -199,7 +204,7 @@ def lowestf(cur, nodes, end, l, pm, h):
 
     return (minn,ming,minf)
 
-def pathfind(s,e,l,pm,h):
+def pathfind(s,e,l,pm,h,fut):
     openl = []
     closel = []
     sol = []
@@ -207,10 +212,10 @@ def pathfind(s,e,l,pm,h):
 
     openl.append(s)
     while True:
-        currtup = lowestf(current, openl, e, l, pm, h)
+        currtup = lowestf(s,current, openl, e, l, pm, h, fut)
         current = currtup[0]
-        currentg = currtup[1]
-        print("CURRENT", current, currentg)
+        currentf = currtup[2]
+        print("CURRENT", current, currentf)
         openl.remove(current)
         closel.append(current)
 
@@ -220,16 +225,16 @@ def pathfind(s,e,l,pm,h):
         for nb in current.nbrs:
             if nb in closel:
                 continue
-            if current.gc(nb,pm,h) < currentg or nb not in openl:
+            if fc(s,current,nb,e,l,pm,h,fut) < currentf or nb not in openl:
                 nb.parent = current
                 if nb not in openl:
                     openl.append(nb)
 
     return current 
 
-n = pathfind(_start,_end,_least,_pmap,_hourly)
+n = pathfind(_start,_end,_least,_pmap,_hourly, _future)
 while n is not None:
     f = n.parent
-    cost = f.gc(n,_pmap,_hourly) if f else 0
+    cost = gc(_start,f,n,_pmap,_hourly) if f else 0
     print(n,cost)
     n = n.parent
