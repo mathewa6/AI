@@ -54,6 +54,13 @@ class City(object):
                 t =3
         return t
 
+    def neighbours(self, store, pm):
+        n = []
+        for i, p in enumerate(pm.pricemap):
+            if p != 0:
+                n.append(store[i])
+        return n
+
     def __str__(self):
         return "{} (x: {}, y: {})".format(self.name, self.x, self.y)
 
@@ -111,3 +118,4 @@ print(_start.distance(_end))
 print(_start.flightTime(_end))
 print(_start.waitTime(_end))
 print(travelTime(_start,_end))
+print(_start.neighbours(_store, _pmap))
