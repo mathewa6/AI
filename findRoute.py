@@ -28,6 +28,8 @@ class Node(object):
         self.name = "Unknown"
         self.parent = None
         self.nbrs = None
+        #self.g is ONLY per destination
+        self.g = 0
 
     def __repr__(self):
         return "{} >>> {}".format(self.name, self.parent)
@@ -64,7 +66,10 @@ class City(Node):
                 t =3
         return t
 
-    def travelTime(self, other, pm, h):
+    def travelCost(self, other, pm, h):
+        """
+        Returns Price[matrix] + hourly*(flight + wait)
+        """
         p = pm.price(self.idx, other.idx)
         time = self.flightTime(other) + self.waitTime(other)
         tcost = h * time
@@ -81,6 +86,17 @@ class City(Node):
                 n.append(store[i])
         self.nbrs = n
         return n
+
+    def gc(self, other, pm, h):
+        pgc = self.parent.g if self.parent else 0
+        self.g = pgc + self.travelCost(other, pm , h)
+        return self.g
+
+    def hc(self, end,lcm, pm, h):
+        time = self.flightTime(end) + self.waitTime(end)
+        tcost = h * time
+        d = self.distance(end)
+        return (d*lcm)+tcost
 
     def __str__(self):
         return "{} (x: {}, y: {})".format(self.name, self.x, self.y)
@@ -127,7 +143,7 @@ if len(_params) == 4:
     _hourly = _params[2]
     _future = _params[3]
 
-#Initialize price map. This is used for neighbours and travelTime.
+#Initialize price map. This is used for neighbours and travelCost.
 l = getFileData("flightCharges")
 _pmap = PriceMap(l)
 
@@ -146,16 +162,17 @@ for n in _store:
     n.neighbours(_store, _pmap)
 
 #Calculate least cost/mile
-least = _pmap.leastCost(_store)
+_least = _pmap.leastCost(_store)
 
 print(_start, _end, _pmap.price(_startidx,_endidx))
 print(_start.distance(_end))
 print(_start.flightTime(_end))
 print(_start.waitTime(_end))
-print(_start.travelTime(_end, _pmap, _hourly))
+print(_start.gc(_end, _pmap, _hourly))
 print(_start.nbrs)
 print(_end.nbrs)
-print(_pmap.leastCost(_store))
+print(_least)
+print(_start.gc(_end,_pmap,_hourly), _start.hc(_end,_least,_pmap,_hourly))
 
 #Start the main algorithm
 
