@@ -229,5 +229,7 @@ def pathfind(s,e,l,pm,h):
 
 n = pathfind(_start,_end,_least,_pmap,_hourly)
 while n is not None:
-    print(n)
+    f = n.parent
+    cost = f.gc(n,_pmap,_hourly) if f else 0
+    print(n,cost)
     n = n.parent
