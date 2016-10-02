@@ -54,11 +54,18 @@ class City(object):
                 t =3
         return t
 
+    def travelTime(self, other, pm, h):
+        p = pm.price(self.idx, other.idx)
+        time = self.flightTime(other) + self.waitTime(other)
+        tcost = h * time
+        print(p,time,tcost)
+        return p + tcost
+
     def neighbours(self, store, pm):
         n = []
         for i, p in enumerate(pm.pricemap[self.idx]):
             if p != 0:
-                n.append(i)
+                n.append(store[i])
         return n
 
     def __str__(self):
@@ -83,13 +90,6 @@ class PriceMap(object):
 
     def __repr(self):
         return str(self)
-
-def travelTime(a, b):
-    p = _pmap.price(a.idx, b.idx)
-    time = a.flightTime(b) + a.waitTime(b)
-    tcost = _hourly * time
-    print(p,time,tcost)
-    return p + tcost
 
 #Start by getting argument list from command line
 _params = getArguments()
@@ -117,5 +117,5 @@ print(_start, _end, _pmap.price(_startidx,_endidx))
 print(_start.distance(_end))
 print(_start.flightTime(_end))
 print(_start.waitTime(_end))
-print(travelTime(_start,_end))
+print(_start.travelTime(_end, _pmap, _hourly))
 print(_start.neighbours(_store, _pmap))
