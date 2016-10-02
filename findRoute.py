@@ -57,6 +57,8 @@ class City(Node):
 
     def waitTime(self, other):
         t = 0
+        if not self.parent:
+            return t
         if self.hub and other.hub:
             t = 1
             return t
@@ -73,7 +75,7 @@ class City(Node):
         p = pm.price(self.idx, other.idx)
         time = self.flightTime(other) + self.waitTime(other)
         tcost = h * time
-        print(p,time,tcost)
+        #print(p,time,tcost)
         return p + tcost
 
     def neighbours(self, store, pm):
@@ -97,6 +99,9 @@ class City(Node):
         tcost = h * time
         d = self.distance(end)
         return (d*lcm)+tcost
+
+    def __eq__(self,other):
+        return self.idx == other.idx
 
     def __str__(self):
         return "{} (x: {}, y: {})".format(self.name, self.x, self.y)
@@ -175,4 +180,54 @@ print(_least)
 print(_start.gc(_end,_pmap,_hourly), _start.hc(_end,_least,_pmap,_hourly))
 
 #Start the main algorithm
+def fc(current,other,end,l,pm,h):
+    g = current.gc(other,pm,h)
+    h = other.hc(end,l,pm,h)
+    return (g+h,g,h)
 
+def lowestf(cur, nodes, end, l, pm, h):
+    minf = sys.maxsize
+    ming = 0
+    minn = cur
+    for n in nodes:
+        if n != cur:
+            f = fc(cur,n,end,l,pm,h)
+            if f[0] < minf:
+                minf = f
+                ming = f[1]
+                minn = n
+
+    return (minn,ming,minf)
+
+def pathfind(s,e,l,pm,h):
+    openl = []
+    closel = []
+    sol = []
+    current = s
+
+    openl.append(s)
+    while True:
+        currtup = lowestf(current, openl, e, l, pm, h)
+        current = currtup[0]
+        currentg = currtup[1]
+        print("CURRENT", current, currentg)
+        openl.remove(current)
+        closel.append(current)
+
+        if current == e:
+            break
+
+        for nb in current.nbrs:
+            if nb in closel:
+                continue
+            if current.gc(nb,pm,h) < currentg or nb not in openl:
+                nb.parent = current
+                if nb not in openl:
+                    openl.append(nb)
+
+    return current 
+
+n = pathfind(_start,_end,_least,_pmap,_hourly)
+while n is not None:
+    print(n)
+    n = n.parent
