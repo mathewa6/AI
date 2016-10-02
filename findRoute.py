@@ -23,8 +23,18 @@ def getFileData(filename):
             lines.append(line.strip())
     return lines
 
-class City(object):
+class Node(object):
+    def __init__(self):
+        self.name = "Unknown"
+        self.parent = None
+        self.nbrs = None
+
+    def __repr__(self):
+        return "{} >>> {}".format(self.name, self.parent)
+
+class City(Node):
     def __init__(self, line, idx):
+        super(City, self).__init__()
         (name, loc) = line.split()
         (x,y) = loc.strip("()").split(",")
         self.name = name
@@ -62,10 +72,14 @@ class City(object):
         return p + tcost
 
     def neighbours(self, store, pm):
+        if self.nbrs:
+            return self.nbrs
+
         n = []
         for i, p in enumerate(pm.pricemap[self.idx]):
             if p != 0:
                 n.append(store[i])
+        self.nbrs = n
         return n
 
     def __str__(self):
@@ -113,6 +127,10 @@ if len(_params) == 4:
     _hourly = _params[2]
     _future = _params[3]
 
+#Initialize price map. This is used for neighbours and travelTime.
+l = getFileData("flightCharges")
+_pmap = PriceMap(l)
+
 #Read in City data
 _store = []
 file = getFileData("cities")
@@ -123,29 +141,21 @@ for i, city in enumerate(file):
 _start = _store[_startidx]
 _end = _store[_endidx]
 
-#Initialize price map. This is used for neighbours and travelTime.
-l = getFileData("flightCharges")
-_pmap = PriceMap(l)
+#Populate each Node's nbrs property
+for n in _store:
+    n.neighbours(_store, _pmap)
 
 #Calculate least cost/mile
-def leastCost(pm, s):
-    m = sys.maxsize
-    for i, ct in enumerate(s):
-        for j in range(i+1, len(s)):
-            if j < len(s):
-                fc = pm.price(i,j)
-                if fc != 0:
-                    x = s[j]
-                    d = ct.distance(x)
-                    ratio = fc/d
-                    if ratio  < m:
-                        m = ratio
-    return m
+least = _pmap.leastCost(_store)
 
 print(_start, _end, _pmap.price(_startidx,_endidx))
 print(_start.distance(_end))
 print(_start.flightTime(_end))
 print(_start.waitTime(_end))
 print(_start.travelTime(_end, _pmap, _hourly))
-print(_start.neighbours(_store, _pmap))
+print(_start.nbrs)
+print(_end.nbrs)
 print(_pmap.leastCost(_store))
+
+#Start the main algorithm
+
