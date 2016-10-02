@@ -85,8 +85,22 @@ class PriceMap(object):
     def price(self, a, b):
         return self.pricemap[a][b]
 
-    def __str__(self):
-        return "{}".format(self.pricemap)
+    def leastCost(self, store):
+        m = sys.maxsize
+        for i, ct in enumerate(store):
+            for j in range(i+1, len(store)):
+                if j < len(store):
+                    fc = self.price(i,j)
+                    if fc != 0:
+                        x = store[j]
+                        d = ct.distance(x)
+                        ratio = fc/d
+                        if ratio  < m:
+                            m = ratio
+        return m
+
+        def __str__(self):
+            return "{}".format(self.pricemap)
 
     def __repr(self):
         return str(self)
@@ -126,7 +140,6 @@ def leastCost(pm, s):
                     ratio = fc/d
                     if ratio  < m:
                         m = ratio
-                        print(m,d,fc)
     return m
 
 print(_start, _end, _pmap.price(_startidx,_endidx))
@@ -135,4 +148,4 @@ print(_start.flightTime(_end))
 print(_start.waitTime(_end))
 print(_start.travelTime(_end, _pmap, _hourly))
 print(_start.neighbours(_store, _pmap))
-print(leastCost(_pmap,_store))
+print(_pmap.leastCost(_store))
