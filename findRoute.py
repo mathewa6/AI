@@ -109,9 +109,25 @@ for i, city in enumerate(file):
 _start = _store[_startidx]
 _end = _store[_endidx]
 
-#Initialize Distance map
+#Initialize price map. This is used for neighbours and travelTime.
 l = getFileData("flightCharges")
 _pmap = PriceMap(l)
+
+#Calculate least cost/mile
+def leastCost(pm, s):
+    m = sys.maxsize
+    for i, ct in enumerate(s):
+        for j in range(i+1, len(s)):
+            if j < len(s):
+                fc = pm.price(i,j)
+                if fc != 0:
+                    x = s[j]
+                    d = ct.distance(x)
+                    ratio = fc/d
+                    if ratio  < m:
+                        m = ratio
+                        print(m,d,fc)
+    return m
 
 print(_start, _end, _pmap.price(_startidx,_endidx))
 print(_start.distance(_end))
@@ -119,3 +135,4 @@ print(_start.flightTime(_end))
 print(_start.waitTime(_end))
 print(_start.travelTime(_end, _pmap, _hourly))
 print(_start.neighbours(_store, _pmap))
+print(leastCost(_pmap,_store))
