@@ -56,9 +56,9 @@ class City(object):
 
     def neighbours(self, store, pm):
         n = []
-        for i, p in enumerate(pm.pricemap):
+        for i, p in enumerate(pm.pricemap[self.idx]):
             if p != 0:
-                n.append(store[i])
+                n.append(i)
         return n
 
     def __str__(self):
