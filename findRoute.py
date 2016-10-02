@@ -39,11 +39,33 @@ class City(object):
         return str(self)
 
 class DistanceMap(object):
-    def __init__(self):
-        pass
+    def __init__(self, lines):
+        self.dmap = []
+        for line in lines:
+            strings = line.split()
+            strings = [int(x) for x in strings]
+            self.dmap.append(strings)
 
+    def distance(self, a, b):
+        return self.dmap[a][b]
+
+    def __str__(self):
+        return "{}".format(self.dmap)
+
+    def __repr(self):
+        return str(self)
+
+#Start by getting argument list from command line
 all = getArguments()
 print(all)
+
+#Read in City data
 file = getFileData("_city")
 for i in file:
     print(City(i))
+
+#Initialize Distance map
+dist = getFileData("flightCharges")
+l = dist[0]
+print(len(dist),len(l.split()))
+print(DistanceMap([l]))
