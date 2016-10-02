@@ -40,32 +40,41 @@ class City(object):
 
 class DistanceMap(object):
     def __init__(self, lines):
-        self.dmap = []
+        self.distancemap = []
         for line in lines:
             strings = line.split()
             strings = [int(x) for x in strings]
-            self.dmap.append(strings)
+            self.distancemap.append(strings)
 
     def distance(self, a, b):
-        return self.dmap[a][b]
+        return self.distancemap[a][b]
 
     def __str__(self):
-        return "{}".format(self.dmap)
+        return "{}".format(self.distancemap)
 
     def __repr(self):
         return str(self)
 
 #Start by getting argument list from command line
-all = getArguments()
-print(all)
+_params = getArguments()
+if len(_params) == 4:
+    _startidx = _params[0]
+    _endidx = _params[1]
+    _hourly = _params[2]
+    _future = _params[3]
 
 #Read in City data
+_store = []
 file = getFileData("_city")
 for i in file:
-    print(City(i))
+    _store.append(City(i))
+
+#Assign start and end cities
+_start = _store[_startidx]
+_end = _store[_endidx]
 
 #Initialize Distance map
-dist = getFileData("flightCharges")
-l = dist[0]
-print(len(dist),len(l.split()))
-print(DistanceMap([l]))
+l = getFileData("_flight")
+_dmap = DistanceMap(l)
+
+print(_start, _end, _dmap.distance(_startidx,_endidx))
