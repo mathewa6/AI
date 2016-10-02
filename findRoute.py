@@ -24,13 +24,14 @@ def getFileData(filename):
     return lines
 
 class City(object):
-    def __init__(self, line):
+    def __init__(self, line, idx):
         (name, loc) = line.split()
         (x,y) = loc.strip("()").split(",")
         self.name = name
         self.x = int(x)
         self.y = int(y)
         self.hub = True if "*" in self.name else False
+        self.idx = idx
 
     def distance(self, other):
         dx = other.x - self.x
@@ -76,6 +77,13 @@ class PriceMap(object):
     def __repr(self):
         return str(self)
 
+def travelTime(a, b):
+    p = _pmap.price(a.idx, b.idx)
+    time = a.flightTime(b) + a.waitTime(b)
+    tcost = _hourly * time
+    print(p,time,tcost)
+    return p + tcost
+
 #Start by getting argument list from command line
 _params = getArguments()
 if len(_params) == 4:
@@ -87,8 +95,8 @@ if len(_params) == 4:
 #Read in City data
 _store = []
 file = getFileData("cities")
-for i in file:
-    _store.append(City(i))
+for i, city in enumerate(file):
+    _store.append(City(city,i))
 
 #Assign start and end cities
 _start = _store[_startidx]
@@ -102,3 +110,4 @@ print(_start, _end, _pmap.price(_startidx,_endidx))
 print(_start.distance(_end))
 print(_start.flightTime(_end))
 print(_start.waitTime(_end))
+print(travelTime(_start,_end))
