@@ -32,6 +32,27 @@ class City(object):
         self.y = int(y)
         self.hub = True if "*" in self.name else False
 
+    def distance(self, other):
+        dx = other.x - self.x
+        dy = other.y - self.y
+        return 4*math.sqrt(math.pow(dx,2)+math.pow(dy,2))
+
+    def flightTime(self, other):
+        cruise = 450
+        d = self.distance(other)
+        return (20.0/60)+(d/cruise)
+
+    def waitTime(self, other):
+        t = 0
+        if self.hub and other.hub:
+            t = 1
+            return t
+        elif self.hub or other.hub:
+            t = 2
+            if not self.hub and not other.hub:
+                t =3
+        return t
+
     def __str__(self):
         return "{} (x: {}, y: {})".format(self.name, self.x, self.y)
 
@@ -65,7 +86,7 @@ if len(_params) == 4:
 
 #Read in City data
 _store = []
-file = getFileData("_city")
+file = getFileData("cities")
 for i in file:
     _store.append(City(i))
 
@@ -74,7 +95,10 @@ _start = _store[_startidx]
 _end = _store[_endidx]
 
 #Initialize Distance map
-l = getFileData("_flight")
+l = getFileData("flightCharges")
 _pmap = PriceMap(l)
 
 print(_start, _end, _pmap.price(_startidx,_endidx))
+print(_start.distance(_end))
+print(_start.flightTime(_end))
+print(_start.waitTime(_end))
