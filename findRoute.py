@@ -73,6 +73,8 @@ class City(Node):
         Returns Price[matrix] + hourly*(flight + wait)
         """
         p = pm.price(self.idx, other.idx)
+        if p == 0:
+            return None
         time = self.flightTime(other) + self.waitTime(other)
         tcost = h * time
         #print(p,time,tcost)
@@ -148,8 +150,8 @@ for i, city in enumerate(file):
     _store.append(City(city,i))
 
 #Assign start and end cities
-_start = _store[_startidx]
-_end = _store[_endidx]
+_start = _store[_startidx if _startidx > 0 else 0]
+_end = _store[_endidx if _endidx < 60 else 59]
 
 #Populate each Node's nbrs property
 for n in _store:
@@ -172,18 +174,18 @@ _least = _pmap.leastCost(_store)
 def fc(start,current,other,end,l,pm,h,f):
     g = gc(start,current,other,pm,h)
     h = hc(other,end,l,pm,h,f)
+    if not g:
+        return (None,None,h)
     return (g+h,g,h)
 
 def gc(start,node, other, pm, h):
     if start == node:
         return 0
     returng = node.travelCost(other, pm , h)
-    print("GCOST",returng)
     return returng
 
 def hc(node, end,lcm, pm, h, f):
     if node == end or f < 1:
-        print("YABBBAABABBABABABABAABBABABA")
         return 0
     time = node.flightTime(end) + node.waitTime(end)
     tcost = h * time
@@ -192,13 +194,17 @@ def hc(node, end,lcm, pm, h, f):
 
 def lowestf(start,cur, nodes, end, l, pm, h, fut):
     minf = fc(start,cur,cur,end,l,pm,h,fut)
+    if not minf:
+        minf = sys.maxsize
     ming = 0
     minn = cur
     for n in nodes:
         if n != cur:
             f = fc(start,cur,n,end,l,pm,h,fut)
+            if not f:
+                continue
             if f[0] < minf:
-                minf = f
+                minf = f[0]
                 ming = f[1]
                 minn = n
 
@@ -215,7 +221,8 @@ def pathfind(s,e,l,pm,h,fut):
         currtup = lowestf(s,current, openl, e, l, pm, h, fut)
         current = currtup[0]
         currentf = currtup[2]
-        print("CURRENT", current, currentf)
+        currentg = currtup[1]
+        #print("CURRENT", current, currentg, openl,closel)
         openl.remove(current)
         closel.append(current)
 
@@ -223,7 +230,7 @@ def pathfind(s,e,l,pm,h,fut):
             break
 
         for nb in current.nbrs:
-            if nb in closel:
+            if nb in closel or not current.travelCost(nb,pm,h):
                 continue
             if fc(s,current,nb,e,l,pm,h,fut) < currentf or nb not in openl:
                 nb.parent = current
