@@ -49,7 +49,7 @@ class City(object):
             return t
         elif self.hub or other.hub:
             t = 2
-            if not self.hub and not other.hub:
+        elif not self.hub and not other.hub:
                 t =3
         return t
 
