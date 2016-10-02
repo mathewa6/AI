@@ -38,19 +38,19 @@ class City(object):
     def __repr__(self):
         return str(self)
 
-class DistanceMap(object):
+class PriceMap(object):
     def __init__(self, lines):
-        self.distancemap = []
+        self.pricemap = []
         for line in lines:
             strings = line.split()
             strings = [int(x) for x in strings]
-            self.distancemap.append(strings)
+            self.pricemap.append(strings)
 
-    def distance(self, a, b):
-        return self.distancemap[a][b]
+    def price(self, a, b):
+        return self.pricemap[a][b]
 
     def __str__(self):
-        return "{}".format(self.distancemap)
+        return "{}".format(self.pricemap)
 
     def __repr(self):
         return str(self)
@@ -75,6 +75,6 @@ _end = _store[_endidx]
 
 #Initialize Distance map
 l = getFileData("_flight")
-_dmap = DistanceMap(l)
+_pmap = PriceMap(l)
 
-print(_start, _end, _dmap.distance(_startidx,_endidx))
+print(_start, _end, _pmap.price(_startidx,_endidx))
