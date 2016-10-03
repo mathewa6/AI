@@ -30,6 +30,7 @@ class Node(object):
         self.nbrs = None
         #self.g is ONLY per destination
         self.g = 0
+        self.h = 0
 
     def __repr__(self):
         return "{} >>> {}".format(self.name, self.parent)
@@ -183,7 +184,7 @@ def hc(node, end,lcm, pm, h, f):
     time = node.flightTime(end) + node.waitTime(end)
     tcost = h * time
     d = node.distance(end)
-    return (d*lcm)+tcost
+    return (d *lcm)+tcost
 
 def lowestf(start,cur, nodes, end, l, pm, h, fut):
     minf = fc(start,cur,cur,end,l,pm,h,fut)
@@ -201,35 +202,33 @@ def lowestf(start,cur, nodes, end, l, pm, h, fut):
                 ming = f[1]
                 minn = n
 
-    return (minn,ming,minf)
+    return ( minn,ming,minf)
 
 def pathfind(s,e,l,pm,h,fut):
     openl = []
     closel = []
-    sol = []
-    current = s
+    q = s
 
     openl.append(s)
-    while True:
-        currtup = lowestf(s,current, openl, e, l, pm, h, fut)
-        current = currtup[0]
-        currentf = currtup[2]
-        currentg = currtup[1]
-        openl.remove(current)
-        closel.append(current)
+    while len(openl) > 0:
+        currtup = lowestf(s,q, openl, e, l, pm, h, fut)
+        q = currtup[0]
+        qf = currtup[2]
+        qg = currtup[1]
+        openl.remove(q)
+        closel.append(q)
 
-        if current == e:
+        if q == e:
             break
 
-        for nb in current.nbrs:
-            if nb in closel or not current.travelCost(nb,pm,h):
+        for nb in q.nbrs:
+            if nb in closel or not q.travelCost(nb,pm,h):
                 continue
-            if fc(s,current,nb,e,l,pm,h,fut) < currentf or nb not in openl:
-                nb.parent = current
+            if fc(s,q,nb,e,l,pm,h,fut) < qf or nb not in openl:
+                nb.parent = q
                 if nb not in openl:
                     openl.append(nb)
-
-    return current
+    return q
 
 n = pathfind(_start,_end,_least,_pmap,_hourly, _future)
 path = []
