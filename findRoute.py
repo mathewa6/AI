@@ -3,6 +3,9 @@
 import sys
 import math
 import fileinput
+import sets
+import heapq
+
 from argparse import ArgumentParser as args
 
 def getArguments():
@@ -164,6 +167,44 @@ class  Info(object):
             #Calculate least cost/mile
             self.least = self.pmap.leastCost(self.store)
 
+class PQ(object):
+    def __init__(self,object,key=lambda x:x):
+        self.key = key
+        if initial:
+            self.data = [(key,item) for item in initial]
+            heapq.heapify(self.data)
+        else:
+            self.data = []
+
+    def peek(self):
+        return self.data[0][1] if len(self.data)>0 else 0
+
+    def push(self, item):
+        heapq.heappush(self.data, (self.key(item),item))
+
+    def pop(self):
+        return heapq.heappop(self.data)[1]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __repr__(self):
+        return "{}".format([x[1] for x in self.data])
+
+def djk(graph):
+    s = sets.Set([])
+    distance = {}
+    prev = {}
+
+    for city in graph.store:
+        distance[city.name] = sys.maxsize
+        prev[city.name] = None
+        s.add(city)
+
+    distance[graph.start] = 0
+
+    while len(s) > 0:
+        break
 
 #Start by getting argument list from command line
 _p = getArguments()
@@ -172,4 +213,6 @@ info = Info(_p,"flightCharges", "cities")
 
 #Start the main algorithm
 for n in info.store:
-    print(len(n.nbrs))
+    print(n.name)
+
+djk(info)
