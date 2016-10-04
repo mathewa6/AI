@@ -135,119 +135,41 @@ class PriceMap(object):
     def __repr(self):
         return str(self)
 
+class  Info(object):
+    def __init__(self,params,flights,cities):
+        if len(params) == 4:
+            self.startidx = params[0]
+            self.endidx = params[1]
+            self.hourly = params[2]
+            self.future = params[3]
+
+            #Initialize price map. This is used for neighbours and travelCost.
+            l = getFileData(flights)
+            self.pmap = PriceMap(l)
+
+            #Read in City data
+            self.store = []
+            file = getFileData(cities)
+            for i, city in enumerate(file):
+                self.store.append(City(city,i))
+
+            #Assign start and end cities
+            self.start = self.store[self.startidx if self.startidx > 0 else 0]
+            self.end = self.store[self.endidx if self.endidx < 60 else 59]
+
+            #Populate each Node's nbrs property
+            for n in self.store:
+                n.neighbours(self.store, self.pmap)
+
+            #Calculate least cost/mile
+            self.least = self.pmap.leastCost(self.store)
+
+
 #Start by getting argument list from command line
-_params = getArguments()
-if len(_params) == 4:
-    _startidx = _params[0]
-    _endidx = _params[1]
-    _hourly = _params[2]
-    _future = _params[3]
+_p = getArguments()
 
-#Initialize price map. This is used for neighbours and travelCost.
-l = getFileData("flightCharges")
-_pmap = PriceMap(l)
-
-#Read in City data
-_store = []
-file = getFileData("cities")
-for i, city in enumerate(file):
-    _store.append(City(city,i))
-
-#Assign start and end cities
-_start = _store[_startidx if _startidx > 0 else 0]
-_end = _store[_endidx if _endidx < 60 else 59]
-
-#Populate each Node's nbrs property
-for n in _store:
-    n.neighbours(_store, _pmap)
-
-#Calculate least cost/mile
-_least = _pmap.leastCost(_store)
+info = Info(_p,"flightCharges", "cities")
 
 #Start the main algorithm
-def fc(start,current,other,end,l,pm,h,f):
-    g = gc(start,current,other,pm,h)
-    h = hc(other,end,l,pm,h,f)
-    if not g:
-        return (None,None,h)
-    return (g+h,g,h)
-
-def gc(start,node, other, pm, h):
-    if start == node:
-        return 0
-    returng = node.travelCost(other, pm , h)
-    return returng
-
-def hc(node, end,lcm, pm, h, f):
-    if node == end or f < 1:
-        return 0
-    time = node.flightTime(end) + node.waitTime(end)
-    tcost = h * time
-    d = node.distance(end)
-    return (d *lcm)+tcost
-
-def lowestf(start,cur, nodes, end, l, pm, h, fut):
-    minf = fc(start,cur,cur,end,l,pm,h,fut)
-    if not minf:
-        minf = sys.maxsize
-    ming = 0
-    minn = cur
-    for n in nodes:
-        if n != cur:
-            f = fc(start,cur,n,end,l,pm,h,fut)
-            if not f:
-                continue
-            if f[0] < minf:
-                minf = f[0]
-                ming = f[1]
-                minn = n
-
-    return ( minn,ming,minf)
-
-def pathfind(s,e,l,pm,h,fut):
-    openl = []
-    closel = []
-    q = s
-
-    openl.append(s)
-    while len(openl) > 0:
-        currtup = lowestf(s,q, openl, e, l, pm, h, fut)
-        q = currtup[0]
-        qf = currtup[2]
-        qg = currtup[1]
-        openl.remove(q)
-        closel.append(q)
-
-        if q == e:
-            break
-
-        for nb in q.nbrs:
-            if nb in closel or not q.travelCost(nb,pm,h):
-                continue
-            if fc(s,q,nb,e,l,pm,h,fut) < qf or nb not in openl:
-                nb.parent = q
-                if nb not in openl:
-                    openl.append(nb)
-    return q
-
-n = pathfind(_start,_end,_least,_pmap,_hourly, _future)
-path = []
-while n is not None:
-    f = n.parent
-    path.append(n)
-    n = n.parent
-path = [x for x in reversed(path)]
-
-rollg = 0
-rollt = 0
-prevt = 0
-for i,n in enumerate(path):
-    if i < len(path)-1:
-        g = gc(_start,path[i+1],n,_pmap,_hourly)
-        o = path[i+1]
-        rollg += g
-        rollt += n.totalTime(o)
-        print("{:18} {:18} {:.1f} - {:.1f} ${:.2f}".format(n.name.strip("*"),o.name.strip("*"),prevt,rollt,g))
-        prevt = rollt
-
-print("Total: ${:.1f}".format(rollg))
+for n in info.store:
+    print(len(n.nbrs))
