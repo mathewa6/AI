@@ -168,7 +168,7 @@ class  Info(object):
             self.least = self.pmap.leastCost(self.store)
 
 class PQ(object):
-    def __init__(self,object,key=lambda x:x):
+    def __init__(self,initial,key=lambda x:x):
         self.key = key
         if initial:
             self.data = [(key,item) for item in initial]
@@ -185,6 +185,12 @@ class PQ(object):
     def pop(self):
         return heapq.heappop(self.data)[1]
 
+    def deprioritize(self,d,city):
+        elements = [item for item in self.data if item[1] == city]
+        if len(elements) > 0:
+            i = self.data.index(elements[0])
+            self.data[i] = (d,city)
+
     def __len__(self):
         return len(self.data)
 
@@ -192,19 +198,33 @@ class PQ(object):
         return "{}".format([x[1] for x in self.data])
 
 def djk(graph):
-    s = sets.Set([])
+    pq = PQ([],lambda x:x.distance(graph.start))
     distance = {}
     prev = {}
 
+    distance[graph.start.name] = 0
+
     for city in graph.store:
-        distance[city.name] = sys.maxsize
-        prev[city.name] = None
-        s.add(city)
+        if city != graph.start:
+            distance[city.name] = sys.maxsize
+            prev[city.name] = None
+        pq.push(city)
 
-    distance[graph.start] = 0
+    #print(pq.data)
 
-    while len(s) > 0:
-        break
+    while len(pq) > 0:
+        n = pq.pop()
+        #print(n)
+        for nbr in n.nbrs:
+            alt = distance[n.name] + n.distance(nbr)
+            #print(alt, distance[nbr.name])
+            if alt < distance[nbr.name]:
+                #print("THE JUNGLE")
+                distance[nbr.name] = alt
+                prev[nbr.name] = n
+                pq.deprioritize(alt,nbr)
+
+    return prev
 
 #Start by getting argument list from command line
 _p = getArguments()
@@ -212,7 +232,12 @@ _p = getArguments()
 info = Info(_p,"flightCharges", "cities")
 
 #Start the main algorithm
-for n in info.store:
-    print(n.name)
+#for n in info.store:
+#    print(n.name)
 
-djk(info)
+ans = djk(info)
+v = info.end
+print(v)
+while v != info.start:
+    print(ans[v.name])
+    v = ans[v.name]
