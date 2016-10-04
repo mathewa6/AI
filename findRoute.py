@@ -231,13 +231,101 @@ _p = getArguments()
 
 info = Info(_p,"flightCharges", "cities")
 
-#Start the main algorithm
-#for n in info.store:
-#    print(n.name)
-
+#Djikstra's algo
 ans = djk(info)
 v = info.end
 print(v)
 while v != info.start:
     print(ans[v.name])
     v = ans[v.name]
+
+
+#Start the main algorithm
+def fc(current,other, graph):
+    g = gc(current,other,graph)
+    h = hc(other,graph)
+    if not g:
+        return (None,None,h)
+    return (g+h,g,h)
+
+def gc(node, other, graph):
+    if graph.start == node:
+        return 0
+    returng = node.travelCost(other, graph.pmap , graph.hourly)
+    return returng
+
+def hc(node, graph):
+    if node == graph.end:
+        return 0
+    time = node.flightTime(graph.end) + node.waitTime(graph.end)
+    tcost = graph.hourly * time
+    d = node.distance(graph.end)
+    return (d * graph.least)+tcost
+
+def lowestf(cur, nodes, graph):
+    minf = fc(cur,cur,graph)
+    if not minf:
+        minf = sys.maxsize
+    ming = 0
+    minn = cur
+    for n in nodes:
+        if n != cur:
+            f = fc(cur,n,graph)
+            if not f:
+                continue
+            if f[0] < minf:
+                minf = f[0]
+                ming = f[1]
+                minn = n
+
+    return (minn,ming,minf)
+
+def pathfind(graph):
+    openl = []
+    closel = []
+    sol = []
+    current = graph.start
+
+    openl.append(graph.start)
+    while True:
+        currtup = lowestf(current, openl, graph)
+        current = currtup[0]
+        currentf = currtup[2]
+        currentg = currtup[1]
+        openl.remove(current)
+        closel.append(current)
+
+        if current == graph.end:
+            break
+
+        for nb in current.nbrs:
+            if nb in closel or not current.travelCost(nb,graph.pmap,graph.hourly):
+                continue
+            if fc(current,nb, graph) < currentf or nb not in openl:
+                nb.parent = current
+                if nb not in openl:
+                    openl.append(nb)
+
+    return current
+
+n = pathfind(info)
+path = []
+while n is not None:
+    f = n.parent
+    path.append(n)
+    n = n.parent
+path = [x for x in reversed(path)]
+
+rollg = 0
+rollt = 0
+prevt = 0
+for i,n in enumerate(path):
+    if i < len(path)-1:
+        g = gc(path[i+1],n,info)
+        o = path[i+1]
+        rollg += g
+        rollt += n.totalTime(o)
+        print("{:18} {:18} {:.1f} - {:.1f} ${:.2f}".format(n.name.strip("*"),o.name.strip("*"),prevt,rollt,g))
+        prevt = rollt
+
+print("Total: ${:.1f}".format(rollg))
