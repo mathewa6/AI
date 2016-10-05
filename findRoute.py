@@ -247,8 +247,6 @@ def fc(current,other, graph):
     return (g+h,g,h)
 
 def gc(node, other, graph):
-    if graph.start == node:
-        return 0
     returng = node.travelCost(other, graph.pmap , graph.hourly)
     return returng
 
