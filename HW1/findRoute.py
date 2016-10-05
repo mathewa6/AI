@@ -3,6 +3,9 @@
 import sys
 import math
 import fileinput
+import sets
+import heapq
+
 from argparse import ArgumentParser as args
 
 def getArguments():
@@ -30,6 +33,7 @@ class Node(object):
         self.nbrs = None
         #self.g is ONLY per destination
         self.g = 0
+        self.h = 0
 
     def __repr__(self):
         return "{} >>> {}".format(self.name, self.parent)
@@ -134,66 +138,135 @@ class PriceMap(object):
     def __repr(self):
         return str(self)
 
+class  Info(object):
+    def __init__(self,params,flights,cities):
+        if len(params) == 4:
+            self.startidx = params[0]
+            self.endidx = params[1]
+            self.hourly = params[2]
+            self.future = params[3]
+
+            #Initialize price map. This is used for neighbours and travelCost.
+            l = getFileData(flights)
+            self.pmap = PriceMap(l)
+
+            #Read in City data
+            self.store = []
+            file = getFileData(cities)
+            for i, city in enumerate(file):
+                self.store.append(City(city,i))
+
+            #Assign start and end cities
+            self.start = self.store[self.startidx if self.startidx > 0 else 0]
+            self.end = self.store[self.endidx if self.endidx < 60 else 59]
+
+            #Populate each Node's nbrs property
+            for n in self.store:
+                n.neighbours(self.store, self.pmap)
+
+            #Calculate least cost/mile
+            self.least = self.pmap.leastCost(self.store)
+
+class PQ(object):
+    def __init__(self,initial,key=lambda x:x):
+        self.key = key
+        if initial:
+            self.data = [(key,item) for item in initial]
+            heapq.heapify(self.data)
+        else:
+            self.data = []
+
+    def peek(self):
+        return self.data[0][1] if len(self.data)>0 else 0
+
+    def push(self, item):
+        heapq.heappush(self.data, (self.key(item),item))
+
+    def pop(self):
+        return heapq.heappop(self.data)[1]
+
+    def deprioritize(self,d,city):
+        elements = [item for item in self.data if item[1] == city]
+        if len(elements) > 0:
+            i = self.data.index(elements[0])
+            self.data[i] = (d,city)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __repr__(self):
+        return "{}".format([x[1] for x in self.data])
+
+def djk(graph):
+    pq = PQ([],lambda x:x.distance(graph.start))
+    distance = {}
+    prev = {}
+
+    distance[graph.start.name] = 0
+
+    for city in graph.store:
+        if city != graph.start:
+            distance[city.name] = sys.maxsize
+            prev[city.name] = None
+        pq.push(city)
+
+    #print(pq.data)
+
+    while len(pq) > 0:
+        n = pq.pop()
+        #print(n)
+        for nbr in n.nbrs:
+            alt = distance[n.name] + n.distance(nbr)
+            #print(alt, distance[nbr.name])
+            if alt < distance[nbr.name]:
+                #print("THE JUNGLE")
+                distance[nbr.name] = alt
+                prev[nbr.name] = n
+                pq.deprioritize(alt,nbr)
+
+    rlist = []
+    r = graph.end
+    while r!= graph.start:
+        rlist.append(r)
+        r.parent = prev[r.name]
+        r = prev[r.name]
+
+    return rlist[0]
+
 #Start by getting argument list from command line
-_params = getArguments()
-if len(_params) == 4:
-    _startidx = _params[0]
-    _endidx = _params[1]
-    _hourly = _params[2]
-    _future = _params[3]
+_p = getArguments()
 
-#Initialize price map. This is used for neighbours and travelCost.
-l = getFileData("flightCharges")
-_pmap = PriceMap(l)
-
-#Read in City data
-_store = []
-file = getFileData("cities")
-for i, city in enumerate(file):
-    _store.append(City(city,i))
-
-#Assign start and end cities
-_start = _store[_startidx if _startidx > 0 else 0]
-_end = _store[_endidx if _endidx < 60 else 59]
-
-#Populate each Node's nbrs property
-for n in _store:
-    n.neighbours(_store, _pmap)
-
-#Calculate least cost/mile
-_least = _pmap.leastCost(_store)
+info = Info(_p,"flightCharges", "cities")
 
 #Start the main algorithm
-def fc(start,current,other,end,l,pm,h,f):
-    g = gc(start,current,other,pm,h)
-    h = hc(other,end,l,pm,h,f)
+def fc(current,other, graph):
+    g = gc(current,other,graph)
+    h = hc(other,graph)
     if not g:
         return (None,None,h)
     return (g+h,g,h)
 
-def gc(start,node, other, pm, h):
-    if start == node:
-        return 0
-    returng = node.travelCost(other, pm , h)
+def gc(node, other, graph):
+    returng = node.travelCost(other, graph.pmap , graph.hourly)
     return returng
 
-def hc(node, end,lcm, pm, h, f):
-    if node == end or f < 1:
+def hc(node, graph):
+    if node == graph.end:
         return 0
-    time = node.flightTime(end) + node.waitTime(end)
-    tcost = h * time
-    d = node.distance(end)
-    return (d*lcm)+tcost
+    time = node.flightTime(graph.end) + node.waitTime(graph.end)
+    tcost = graph.hourly * time
+    d = node.distance(graph.end)
+    return (d * graph.least)+tcost
 
-def lowestf(start,cur, nodes, end, l, pm, h, fut):
-    minf = fc(start,cur,cur,end,l,pm,h,fut)
+def lowestf(cur, nodes, graph):
+    minf = fc(cur,cur,graph)
     if not minf:
         minf = sys.maxsize
     ming = 0
     minn = cur
     for n in nodes:
         if n != cur:
-            f = fc(start,cur,n,end,l,pm,h,fut)
+            f = fc(cur,n,graph)
             if not f:
                 continue
             if f[0] < minf:
@@ -203,35 +276,36 @@ def lowestf(start,cur, nodes, end, l, pm, h, fut):
 
     return (minn,ming,minf)
 
-def pathfind(s,e,l,pm,h,fut):
+def pathfind(graph):
     openl = []
     closel = []
     sol = []
-    current = s
+    current = graph.start
 
-    openl.append(s)
+    openl.append(graph.start)
     while True:
-        currtup = lowestf(s,current, openl, e, l, pm, h, fut)
+        currtup = lowestf(current, openl, graph)
         current = currtup[0]
         currentf = currtup[2]
         currentg = currtup[1]
         openl.remove(current)
         closel.append(current)
 
-        if current == e:
+        if current == graph.end:
             break
 
         for nb in current.nbrs:
-            if nb in closel or not current.travelCost(nb,pm,h):
+            if nb in closel or not current.travelCost(nb,graph.pmap,graph.hourly):
                 continue
-            if fc(s,current,nb,e,l,pm,h,fut) < currentf or nb not in openl:
+            if fc(current,nb, graph) < currentf or nb not in openl:
                 nb.parent = current
                 if nb not in openl:
                     openl.append(nb)
 
     return current
 
-n = pathfind(_start,_end,_least,_pmap,_hourly, _future)
+n = pathfind(info) if info.future == 1 else djk(info)
+
 path = []
 while n is not None:
     f = n.parent
@@ -244,7 +318,7 @@ rollt = 0
 prevt = 0
 for i,n in enumerate(path):
     if i < len(path)-1:
-        g = gc(_start,path[i+1],n,_pmap,_hourly)
+        g = gc(path[i+1],n,info) if info.future > 0 else path[i+1].travelCost(n,info.pmap,info.hourly)
         o = path[i+1]
         rollg += g
         rollt += n.totalTime(o)
