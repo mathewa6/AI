@@ -224,21 +224,19 @@ def djk(graph):
                 prev[nbr.name] = n
                 pq.deprioritize(alt,nbr)
 
-    return prev
+    rlist = []
+    r = graph.end
+    while r!= graph.start:
+        rlist.append(r)
+        r.parent = prev[r.name]
+        r = prev[r.name]
+
+    return rlist[0]
 
 #Start by getting argument list from command line
 _p = getArguments()
 
 info = Info(_p,"flightCharges", "cities")
-
-#Djikstra's algo
-ans = djk(info)
-v = info.end
-print(v)
-while v != info.start:
-    print(ans[v.name])
-    v = ans[v.name]
-
 
 #Start the main algorithm
 def fc(current,other, graph):
@@ -249,8 +247,6 @@ def fc(current,other, graph):
     return (g+h,g,h)
 
 def gc(node, other, graph):
-    if graph.start == node:
-        return 0
     returng = node.travelCost(other, graph.pmap , graph.hourly)
     return returng
 
@@ -308,7 +304,8 @@ def pathfind(graph):
 
     return current
 
-n = pathfind(info)
+n = pathfind(info) if info.future == 1 else djk(info)
+
 path = []
 while n is not None:
     f = n.parent
@@ -321,7 +318,7 @@ rollt = 0
 prevt = 0
 for i,n in enumerate(path):
     if i < len(path)-1:
-        g = gc(path[i+1],n,info)
+        g = gc(path[i+1],n,info) if info.future > 0 else path[i+1].travelCost(n,info.pmap,info.hourly)
         o = path[i+1]
         rollg += g
         rollt += n.totalTime(o)
