@@ -1,4 +1,4 @@
-Script started on Tue 02 Oct 2016 11:22:49 PM EDT
+Script started on Sun 02 Oct 2016 11:22:49 PM EDT
 <129 arctic:~/CSE841/HW1 >exit./findRoute.py 47 46 10 01[42G0 15 15 1[K00 10[27Gexit[Kscript test.txt[27Gexit[K./findRoute.py 0 15 10 010
 Albany(NY)         Chicago(IL)        0.0 - 1.9 $373.19
 Total: $373.2
@@ -24,4 +24,4 @@ Total: $809.3
 <135 arctic:~/CSE841/HW1 >exit
 exit
 
-Script done on Tue 04 Oct 2016 08:23:28 PM EDT
+Script done on Sun 02 Oct 2016 11:23:56 PM EDT

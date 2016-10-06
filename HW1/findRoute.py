@@ -48,6 +48,7 @@ class City(Node):
         self.y = int(y)
         self.hub = True if "*" in self.name else False
         self.idx = idx
+        self.known = False
 
     def distance(self, other):
         dx = other.x - self.x
@@ -208,21 +209,26 @@ def djk(graph):
         if city != graph.start:
             distance[city.name] = sys.maxsize
             prev[city.name] = None
+            city.parent = None
+            city.known = False
         pq.push(city)
 
     #print(pq.data)
+    pq.deprioritize(0,graph.start)
 
     while len(pq) > 0:
+        print(pq.data[0])
         n = pq.pop()
-        #print(n)
+        n.known = True
         for nbr in n.nbrs:
             alt = distance[n.name] + n.distance(nbr)
             #print(alt, distance[nbr.name])
-            if alt < distance[nbr.name]:
+            if alt < distance[nbr.name] and not nbr.known:
                 #print("THE JUNGLE")
                 distance[nbr.name] = alt
                 prev[nbr.name] = n
-                pq.deprioritize(alt,nbr)
+                pq.deprioritize(min(alt,n.distance(graph.start)),nbr)
+                nbr.parent = n
 
     rlist = []
     r = graph.end
