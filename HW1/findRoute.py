@@ -8,11 +8,33 @@ from argparse import ArgumentParser as args
 
 
 def getArguments():
-    arguments = args(description="Finds the cheapest route between 2 locations. See CSE841 HW1 for spec..")
-    arguments.add_argument("start", action="store", metavar="start_city", type=int, help="Starting city for the A* algorithm")
-    arguments.add_argument("end", action="store", metavar="end_city", type=int, help="Ending city for the A* algorithm")
-    arguments.add_argument("hourly", action="store", metavar="cost_of_hour", type=float, help="Hourly cost for the A* algorithm")
-    arguments.add_argument("future", action="store", metavar="future_cost", type=int, help="Whether or not to use the A* algorithm")
+    arguments = args(
+                description="""Finds the cheapest route between 2 locations.
+                            See CSE841 HW1 for spec..""")
+    arguments.add_argument(
+                            "start",
+                            action="store",
+                            metavar="start_city",
+                            type=int,
+                            help="Starting city for the A* algorithm")
+    arguments.add_argument(
+                            "end",
+                            action="store",
+                            metavar="end_city",
+                            type=int,
+                            help="Ending city for the A* algorithm")
+    arguments.add_argument(
+                            "hourly",
+                            action="store",
+                            metavar="cost_of_hour",
+                            type=float,
+                            help="Hourly cost for the A* algorithm")
+    arguments.add_argument(
+                            "future",
+                            action="store",
+                            metavar="future_cost",
+                            type=int,
+                            help="Whether or not to use the A* algorithm")
     ip = args.parse_args(arguments)
 
     return (ip.start, ip.end, ip.hourly, ip.future)
@@ -231,7 +253,11 @@ def djk(graph):
         for nbr in n.nbrs:
             alt = distance[n.name] + djk_distance(n, nbr, graph.pmap)
             # print(nbr.name, alt, distance[nbr.name])
-            if not nbr.known and alt < distance[nbr.name] and graph.pmap.price(n.idx, nbr.idx) > 0:
+            if (
+                not nbr.known and
+                alt < distance[nbr.name] and
+                graph.pmap.price(n.idx, nbr.idx) > 0
+            ):
                 # print("THE JUNGLE")
                 distance[nbr.name] = alt
                 pq.deprioritize(alt, nbr)
@@ -290,7 +316,6 @@ def lowestf(cur, nodes, graph):
 def pathfind(graph):
     openl = []
     closel = []
-    sol = []
     current = graph.start
 
     openl.append(graph.start)
@@ -298,7 +323,6 @@ def pathfind(graph):
         currtup = lowestf(current, openl, graph)
         current = currtup[0]
         currentf = currtup[2]
-        currentg = currtup[1]
         openl.remove(current)
         closel.append(current)
 
@@ -306,7 +330,10 @@ def pathfind(graph):
             break
 
         for nb in current.nbrs:
-            if nb in closel or not current.travelCost(nb, graph.pmap, graph.hourly):
+            if (
+                nb in closel or
+                not current.travelCost(nb, graph.pmap, graph.hourly)
+            ):
                 continue
             if fc(current, nb, graph) < currentf or nb not in openl:
                 nb.parent = current
@@ -329,11 +356,15 @@ rollt = 0
 prevt = 0
 for i, n in enumerate(path):
     if i < len(path)-1:
-        g = gc(path[i+1], n, info) if info.future > 0 else path[i+1].travelCost(n, info.pmap, info.hourly)
+        pathval = path[i+1].travelCost(n, info.pmap, info.hourly)
+        g = gc(path[i+1], n, info) if info.future > 0 else pathval
         o = path[i+1]
         rollg += g
         rollt += n.totalTime(o)
-        print("{:18} {:18} {:.1f} - {:.1f} ${:.2f}".format(n.name.strip("*"), o.name.strip("*"), prevt, rollt, g))
+        print("{:18} {:18} {:.1f} - {:.1f} ${:.2f}".format(
+                n.name.strip("*"),
+                o.name.strip("*"), prevt, rollt, g
+                ))
         prevt = rollt
 
 print("Total: ${:.1f}".format(rollg))
