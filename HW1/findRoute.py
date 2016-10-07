@@ -2,8 +2,6 @@
 
 import sys
 import math
-import fileinput
-import sets
 import heapq
 
 from argparse import ArgumentParser as args
@@ -122,6 +120,7 @@ class PriceMap(object):
         return self.pricemap[a][b]
 
     def leastCost(self, store):
+        # cheap hack
         if len(store) < 10:
             return 0
 
@@ -206,10 +205,13 @@ class PQ(object):
         return "{}".format([x[1] for x in self.data])
 
 
+def djk_distance(self, other, pm):
+    return pm.price(self.idx, other.idx)
+
+
 def djk(graph):
-    pq = PQ([], lambda x: x.distance(graph.start))
     distance = {}
-    prev = {}
+    pq = PQ([], lambda x: distance[x.name])
 
     for city in graph.store:
         distance[city.name] = sys.maxsize
@@ -220,21 +222,20 @@ def djk(graph):
     # print(pq.data)
     pq.deprioritize(0, graph.start)
     distance[graph.start.name] = 0
-    end = None
 
     while len(pq) > 0:
         print(pq.data[0])
         n = pq.pop()
         n.known = True
+        print(n)
         for nbr in n.nbrs:
-            alt = distance[n.name] + n.distance(nbr)
-            # print(alt, distance[nbr.name])
-            if not nbr.known and alt < distance[nbr.name]:
+            alt = distance[n.name] + djk_distance(n, nbr, graph.pmap)
+            # print(nbr.name, alt, distance[nbr.name])
+            if not nbr.known and alt < distance[nbr.name] and graph.pmap.price(n.idx, nbr.idx) > 0:
                 # print("THE JUNGLE")
                 distance[nbr.name] = alt
-                pq.deprioritize(min(alt, n.distance(graph.start)), nbr)
+                pq.deprioritize(alt, nbr)
                 nbr.parent = n
-                end = nbr
 
     return graph.end
 
