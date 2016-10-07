@@ -313,14 +313,17 @@ def fc(current, other, graph):
 
 
 def gc(node, other, graph):
-    returng = node.travelCost(other, graph.pmap, graph.hourly)
+    t = Flights(node, other)
+    returng = t.travelCost(graph.pmap, graph.hourly)
     return returng
 
 
 def hc(node, graph):
     if node == graph.end:
         return 0
-    time = node.flightTime(graph.end) + node.waitTime(graph.end)
+
+    t = Flights(node, graph.end)
+    time = t.totalTime()
     tcost = graph.hourly * time
     d = node.distance(graph.end)
     return (d * graph.least)+tcost
@@ -362,9 +365,10 @@ def pathfind(graph):
             break
 
         for nb in current.nbrs:
+            t = Flights(current, nb)
             if (
                 nb in closel or
-                not current.travelCost(nb, graph.pmap, graph.hourly)
+                not t.travelCost(graph.pmap, graph.hourly)
             ):
                 continue
             if fc(current, nb, graph) < currentf or nb not in openl:
