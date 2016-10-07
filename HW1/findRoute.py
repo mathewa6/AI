@@ -218,7 +218,7 @@ class Flights(object):
         return t
 
     def totalTime(self):
-        return self.a.flightTime(self.b) + self.a.waitTime(self.b)
+        return self.flightTime() + self.waitTime()
 
     def travelCost(self, pm, h):
         """
@@ -227,7 +227,7 @@ class Flights(object):
         p = pm.price(self.a.idx, self.b.idx)
         if p == 0:
             return 0
-        time = self.a.totalTime(self.b)
+        time = self.totalTime()
         tcost = h * time
         # print(p,time,tcost)
         return p + tcost
@@ -363,11 +363,12 @@ rollt = 0
 prevt = 0
 for i, n in enumerate(path):
     if i < len(path)-1:
-        pathval = path[i+1].travelCost(n, info.pmap, info.hourly)
+        travel = Flights(n, path[i+1])
+        pathval = travel.travelCost(info.pmap, info.hourly)
         g = gc(path[i+1], n, info) if info.future > 0 else pathval
         o = path[i+1]
         rollg += g
-        rollt += n.totalTime(o)
+        rollt += travel.totalTime()
         print("{:18} {:18} {:.1f} - {:.1f} ${:.2f}".format(
                 n.name.strip("*"),
                 o.name.strip("*"), prevt, rollt, g
