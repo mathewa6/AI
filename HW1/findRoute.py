@@ -22,10 +22,12 @@ For example, type:
 to run findRoute.y with start_index = 0, end_index = 24, hourly_cost = 10 and
 future_cost = 1.
 """
+from __future__ import division
 
 import sys
 import math
 import heapq
+import datetime
 
 from argparse import ArgumentParser as args
 
@@ -372,6 +374,16 @@ def pathfind(graph):
 
     return current
 
+
+def timeformat(hours):
+    secs = hours * 3600.0
+    h = int(secs / 3600.0)
+    m = int((secs / 60.0) % 60.0)
+    dt = datetime.time(h, m)
+
+    return dt.strftime("%H:%M")
+
+# Based on the input parameter "future_cost", decide between djk and a*.
 n = pathfind(info) if info.future == 1 else djk(info)
 
 path = []
@@ -392,9 +404,9 @@ for i, n in enumerate(path):
         o = path[i+1]
         rollg += g
         rollt += travel.totalTime()
-        print("{:18} {:18} {:.1f} - {:.1f} ${:.2f}".format(
+        print("{:18} {:18} {} - {} ${:.2f}".format(
                 n.name.strip("*"),
-                o.name.strip("*"), prevt, rollt, g
+                o.name.strip("*"), timeformat(prevt), timeformat(rollt), g
                 ))
         prevt = rollt
 
