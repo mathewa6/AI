@@ -258,7 +258,7 @@ class Flights(object):
         return p + tcost
 
 
-# Start Dijkstra's Algorithm
+# Dijkstra's Algorithm
 def djk_distance(self, other, pm):
     return pm.price(self.idx, other.idx)
 
@@ -297,13 +297,7 @@ def djk(graph):
     return graph.end
 
 
-# Start by getting argument list from command line
-_p = getArguments()
-
-info = Info(_p, "verts_dist", "verts")
-
-
-# Start the main A* algorithm
+# main A* algorithm
 def fc(current, other, graph):
     g = gc(current, other, graph)
     h = hc(other, graph)
@@ -386,6 +380,13 @@ def timeformat(hours):
     dt = datetime.time(h, m)
 
     return dt.strftime("%H:%M")
+
+
+
+# Start by getting argument list from command line
+_p = getArguments()
+
+info = Info(_p, "flightCharges", "cities")
 
 # Based on the input parameter "future_cost", decide between djk and a*.
 n = pathfind(info) if info.future == 1 else djk(info)
