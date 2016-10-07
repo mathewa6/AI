@@ -82,7 +82,7 @@ class City(Node):
         """
         p = pm.price(self.idx, other.idx)
         if p == 0:
-            return None
+            return 0 
         time = self.totalTime(other)
         tcost = h * time
         #print(p,time,tcost)
@@ -120,6 +120,9 @@ class PriceMap(object):
         return self.pricemap[a][b]
 
     def leastCost(self, store):
+        if len(store) < 10:
+            return 0
+
         m = sys.maxsize
         for i, ct in enumerate(store):
             for j in range(i+1, len(store)):
@@ -203,18 +206,16 @@ def djk(graph):
     distance = {}
     prev = {}
 
-    distance[graph.start.name] = 0
-
     for city in graph.store:
-        if city != graph.start:
-            distance[city.name] = sys.maxsize
-            prev[city.name] = None
-            city.parent = None
-            city.known = False
+        distance[city.name] = sys.maxsize
+        city.parent = None
+        city.known = False
         pq.push(city)
 
     #print(pq.data)
     pq.deprioritize(0,graph.start)
+    distance[graph.start.name] = 0
+    end = None
 
     while len(pq) > 0:
         print(pq.data[0])
@@ -223,26 +224,19 @@ def djk(graph):
         for nbr in n.nbrs:
             alt = distance[n.name] + n.distance(nbr)
             #print(alt, distance[nbr.name])
-            if alt < distance[nbr.name] and not nbr.known:
+            if not nbr.known and alt < distance[nbr.name]:
                 #print("THE JUNGLE")
                 distance[nbr.name] = alt
-                prev[nbr.name] = n
                 pq.deprioritize(min(alt,n.distance(graph.start)),nbr)
                 nbr.parent = n
+                end = nbr
 
-    rlist = []
-    r = graph.end
-    while r!= graph.start:
-        rlist.append(r)
-        r.parent = prev[r.name]
-        r = prev[r.name]
-
-    return rlist[0]
+    return graph.end
 
 #Start by getting argument list from command line
 _p = getArguments()
 
-info = Info(_p,"flightCharges", "cities")
+info = Info(_p,"verts_dist", "verts")
 
 #Start the main algorithm
 def fc(current,other, graph):
