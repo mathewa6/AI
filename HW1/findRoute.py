@@ -76,39 +76,6 @@ class City(Node):
         dy = other.y - self.y
         return 4*math.sqrt(math.pow(dx, 2)+math.pow(dy, 2))
 
-    def flightTime(self, other):
-        cruise = 450
-        d = self.distance(other)
-        return (20.0/60)+(d/cruise)
-
-    def waitTime(self, other):
-        t = 0
-        if not self.parent:
-            return t
-        if self.hub and other.hub:
-            t = 1
-            return t
-        elif self.hub or other.hub:
-            t = 2
-        elif not self.hub and not other.hub:
-                t = 3
-        return t
-
-    def totalTime(self, other):
-        return self.flightTime(other) + self.waitTime(other)
-
-    def travelCost(self, other, pm, h):
-        """
-        Returns Price[matrix] + hourly*(flight + wait)
-        """
-        p = pm.price(self.idx, other.idx)
-        if p == 0:
-            return 0
-        time = self.totalTime(other)
-        tcost = h * time
-        # print(p,time,tcost)
-        return p + tcost
-
     def neighbours(self, store, pm):
         if self.nbrs:
             return self.nbrs
@@ -227,6 +194,46 @@ class PQ(object):
         return "{}".format([x[1] for x in self.data])
 
 
+class Flights(object):
+    def __init__(self, a, b, cruise=450):
+        self.a = a
+        self.b = b
+        self.cruise = cruise
+
+    def flightTime(self):
+        d = self.a.distance(self.b)
+        return (20.0/60)+(d/self.cruise)
+
+    def waitTime(self):
+        t = 0
+        if not self.a.parent:
+            return t
+        if self.a.hub and self.b.hub:
+            t = 1
+            return t
+        elif self.a.hub or self.b.hub:
+            t = 2
+        elif not self.a.hub and not self.b.hub:
+                t = 3
+        return t
+
+    def totalTime(self):
+        return self.a.flightTime(self.b) + self.a.waitTime(self.b)
+
+    def travelCost(self, pm, h):
+        """
+        Returns Price[matrix] + hourly*(flight + wait)
+        """
+        p = pm.price(self.a.idx, self.b.idx)
+        if p == 0:
+            return 0
+        time = self.a.totalTime(self.b)
+        tcost = h * time
+        # print(p,time,tcost)
+        return p + tcost
+
+
+# Start Dijkstra's Algorithm
 def djk_distance(self, other, pm):
     return pm.price(self.idx, other.idx)
 
@@ -249,7 +256,6 @@ def djk(graph):
         print(pq.data[0])
         n = pq.pop()
         n.known = True
-        print(n)
         for nbr in n.nbrs:
             alt = distance[n.name] + djk_distance(n, nbr, graph.pmap)
             # print(nbr.name, alt, distance[nbr.name])
@@ -265,13 +271,14 @@ def djk(graph):
 
     return graph.end
 
+
 # Start by getting argument list from command line
 _p = getArguments()
 
 info = Info(_p, "verts_dist", "verts")
 
 
-# Start the main algorithm
+# Start the main A* algorithm
 def fc(current, other, graph):
     g = gc(current, other, graph)
     h = hc(other, graph)
