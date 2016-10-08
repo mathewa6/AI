@@ -147,10 +147,6 @@ class PriceMap(object):
         return self.pricemap[a][b]
 
     def leastCost(self, store):
-        # cheap hack
-        if len(store) < 10:
-            return 0
-
         m = sys.maxsize
         for i, ct in enumerate(store):
             for j in range(i+1, len(store)):
@@ -159,7 +155,7 @@ class PriceMap(object):
                     if fc != 0:
                         x = store[j]
                         d = ct.distance(x)
-                        ratio = fc/d
+                        ratio = fc/d if d != 0 else 0
                         if ratio < m:
                             m = ratio
         return m
@@ -300,23 +296,19 @@ def djk(graph):
         city.known = False
         pq.push(city)
 
-    # print(pq.data)
     pq.deprioritize(0, graph.start)
     distance[graph.start.name] = 0
 
     while len(pq) > 0:
-        print(pq.data[0])
         n = pq.pop()
         n.known = True
         for nbr in n.nbrs:
             alt = distance[n.name] + djk_distance(n, nbr, graph.pmap)
-            # print(nbr.name, alt, distance[nbr.name])
             if (
                 not nbr.known and
                 alt < distance[nbr.name] and
                 graph.pmap.price(n.idx, nbr.idx) > 0
             ):
-                # print("THE JUNGLE")
                 distance[nbr.name] = alt
                 pq.deprioritize(alt, nbr)
                 nbr.parent = n
@@ -420,7 +412,7 @@ def timeformat(hours):
 # Start by getting argument list from command line
 _p = getArguments()
 
-info = Info(_p, "flightCharges", "cities")
+info = Info(_p, "verts_dist", "verts")
 
 # Based on the input parameter "future_cost", decide between djk and a*.
 n = pathfind(info) if info.future == 1 else djk(info)
