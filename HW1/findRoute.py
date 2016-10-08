@@ -90,7 +90,8 @@ class Node(object):
 
 class City(Node):
     """
-    City is used to traverse through the graph though it's nbr and neighbours().
+    City is used to traverse through the graph by using each nodes
+    nbr property and neighbours().
     Make sure that neighbours() is called before using the self.nbr property.
     """
     def __init__(self, line, idx):
@@ -406,8 +407,6 @@ def timeformat(hours):
     dt = datetime.time(h, m)
 
     return dt.strftime("%H:%M")
-
-
 
 # Start by getting argument list from command line
 _p = getArguments()
