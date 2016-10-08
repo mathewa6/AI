@@ -75,6 +75,10 @@ def getFileData(filename):
 
 
 class Node(object):
+    """
+    Node denotes vertices in our graph.
+    City() inherits from Node.
+    """
     def __init__(self):
         self.name = "Unknown"
         self.parent = None
@@ -85,6 +89,10 @@ class Node(object):
 
 
 class City(Node):
+    """
+    City is used to traverse through the graph though it's nbr and neighbours().
+    Make sure that neighbours() is called before using the self.nbr property.
+    """
     def __init__(self, line, idx):
         super(City, self).__init__()
         (name, loc) = line.split()
@@ -123,6 +131,11 @@ class City(Node):
 
 
 class PriceMap(object):
+    """
+    PriceMap encapsulates a 2D array that stores flight charges from City
+    objects in A(rows) to B(columns).
+    Use city.idx to access values.
+    """
     def __init__(self, lines):
         self.pricemap = []
         for line in lines:
@@ -159,6 +172,10 @@ class PriceMap(object):
 
 
 class Info(object):
+    """
+    Info objects store global data required for CSE841 HW1.
+    TODO: Make this a singleton.
+    """
     def __init__(self, params, flights, cities):
         if len(params) == 4:
             self.startidx = params[0]
@@ -189,6 +206,11 @@ class Info(object):
 
 
 class PQ(object):
+    """
+    A simple Priority Queue built on a min heap.
+    Built on the idea from
+    https://joernhees.de/blog/2010/07/19/min-heap-in-python/
+    """
     def __init__(self, initial, key=lambda x: x):
         self.key = key
         if initial:
@@ -220,6 +242,10 @@ class PQ(object):
 
 
 class Flights(object):
+    """
+    Contains helper functions for calculting travel metrics between
+    two City() objects, a and b.
+    """
     def __init__(self, a, b, cruise=450):
         self.a = a
         self.b = b
@@ -258,6 +284,7 @@ class Flights(object):
         return p + tcost
 
 
+# ------------------------------------------------------------------------------
 # Dijkstra's Algorithm
 def djk_distance(self, other, pm):
     return pm.price(self.idx, other.idx)
@@ -297,6 +324,7 @@ def djk(graph):
     return graph.end
 
 
+# ------------------------------------------------------------------------------
 # main A* algorithm
 def fc(current, other, graph):
     g = gc(current, other, graph)
@@ -373,7 +401,13 @@ def pathfind(graph):
     return current
 
 
+# ------------------------------------------------------------------------------
 def timeformat(hours):
+    """
+    I'm not entirely sure why yet, but using datetime rounds up
+    recurring float hours, so instead we'll use this to print time in the
+    HH:MM format.
+    """
     secs = hours * 3600.0
     h = int(secs / 3600.0)
     m = int((secs / 60.0) % 60.0)
