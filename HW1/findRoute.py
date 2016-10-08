@@ -191,8 +191,9 @@ class Info(object):
                 self.store.append(City(city, i))
 
             # Assign start and end cities
+            l = len(cities)
             self.start = self.store[self.startidx if self.startidx > 0 else 0]
-            self.end = self.store[self.endidx if self.endidx < 60 else 59]
+            self.end = self.store[self.endidx if self.endidx < l else (l - 1)]
 
             # Populate each Node's nbrs property
             for n in self.store:
@@ -319,85 +320,15 @@ def djk(graph):
 
 # ------------------------------------------------------------------------------
 # main A* algorithm
-def fc(current, other, graph):
-    g = gc(current, other, graph)
-    h = hc(other, graph)
-    if not g:
-        return (None, None, h)
-    return (g+h, g, h)
-
-
-def gc(node, other, graph):
-    t = Flights(node, other)
-    returng = t.travelCost(graph.pmap, graph.hourly)
-    return returng
-
-
-def hc(node, graph):
-    if node == graph.end:
-        return 0
-
-    t = Flights(node, graph.end)
-    time = t.totalTime()
-    tcost = graph.hourly * time
-    d = node.distance(graph.end)
-    return (d * graph.least)+tcost
-
-
-def lowestf(cur, nodes, graph):
-    minf = fc(cur, cur, graph)
-    if not minf:
-        minf = sys.maxsize
-    ming = 0
-    minn = cur
-    for n in nodes:
-        if n != cur:
-            f = fc(cur, n, graph)
-            if not f:
-                continue
-            if f[0] < minf:
-                minf = f[0]
-                ming = f[1]
-                minn = n
-
-    return (minn, ming, minf)
-
 
 def pathfind(graph):
-    openl = []
-    closel = []
-    current = graph.start
-
-    openl.append(graph.start)
-    while True:
-        currtup = lowestf(current, openl, graph)
-        current = currtup[0]
-        currentf = currtup[2]
-        openl.remove(current)
-        closel.append(current)
-
-        if current == graph.end:
-            break
-
-        for nb in current.nbrs:
-            t = Flights(current, nb)
-            if (
-                nb in closel or
-                not t.travelCost(graph.pmap, graph.hourly)
-            ):
-                continue
-            if fc(current, nb, graph) < currentf or nb not in openl:
-                nb.parent = current
-                if nb not in openl:
-                    openl.append(nb)
-
-    return current
+    pass
 
 
 # ------------------------------------------------------------------------------
 def timeformat(hours):
     """
-    I'm not entirely sure why yet, but using datetime rounds up
+    I'm not entirely sure why... yet, but using datetime rounds up
     recurring float hours, so instead we'll use this to print time in the
     HH:MM format.
     """
@@ -430,7 +361,7 @@ for i, n in enumerate(path):
     if i < len(path)-1:
         travel = Flights(n, path[i+1])
         pathval = travel.travelCost(info.pmap, info.hourly)
-        g = gc(path[i+1], n, info) if info.future > 0 else pathval
+        g = pathval
         o = path[i+1]
         rollg += g
         rollt += travel.totalTime()
