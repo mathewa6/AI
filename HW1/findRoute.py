@@ -191,9 +191,9 @@ class Info(object):
                 self.store.append(City(city, i))
 
             # Assign start and end cities
-            l = len(cities)
+            l = len(self.store)
             self.start = self.store[self.startidx if self.startidx > 0 else 0]
-            self.end = self.store[self.endidx if self.endidx < l else (l - 1)]
+            self.end = self.store[self.endidx if self.endidx < l else (l)]
 
             # Populate each Node's nbrs property
             for n in self.store:
@@ -278,7 +278,7 @@ class Flights(object):
             return 0
         time = self.totalTime()
         tcost = h * time
-        # print(p,time,tcost)
+        # print(p, time, tcost)
         return p + tcost
 
 
@@ -322,16 +322,43 @@ def djk(graph):
 # main A* algorithm
 def hc(city, inf):
     dest = inf.end
-    a = dest.distance(inf.end)
+    a = city.distance(dest)
     a = a * inf.least
-    t = dest.totalTime(inf.end)
+    travels = Flights(city, dest)
+    t = travels.totalTime()
     b = inf.hourly * t
 
     return a + b
 
 
 def pathfind(graph):
-    pass
+    distance = {}
+    pq = PQ([], lambda x: distance[x.name])
+
+    for city in graph.store:
+        distance[city.name] = sys.maxsize
+        city.parent = None
+        city.known = False
+        pq.push(city)
+
+    pq.deprioritize(0, graph.start)
+    distance[graph.start.name] = 0
+
+    while len(pq) > 0:
+        n = pq.pop()
+        n.known = True
+        for nbr in n.nbrs:
+            alt = distance[n.name] + hc(nbr, graph)
+            if (
+                not nbr.known and
+                alt < distance[nbr.name] and
+                graph.pmap.price(n.idx, nbr.idx) > 0
+            ):
+                distance[nbr.name] = alt
+                pq.deprioritize(alt, nbr)
+                nbr.parent = n
+
+    return graph.end
 
 
 # ------------------------------------------------------------------------------
@@ -351,7 +378,7 @@ def timeformat(hours):
 # Start by getting argument list from command line
 _p = getArguments()
 
-info = Info(_p, "verts_dist", "verts")
+info = Info(_p, "flightCharges", "cities")
 
 # Based on the input parameter "future_cost", decide between djk and a*.
 n = pathfind(info) if info.future == 1 else djk(info)
@@ -369,6 +396,7 @@ prevt = 0
 for i, n in enumerate(path):
     if i < len(path)-1:
         travel = Flights(n, path[i+1])
+        prevt += travel.waitTime()
         pathval = travel.travelCost(info.pmap, info.hourly)
         g = pathval
         o = path[i+1]
