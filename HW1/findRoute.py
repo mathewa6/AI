@@ -391,7 +391,7 @@ def timeformat(hours):
     """
     I'm not entirely sure why... yet, but using datetime rounds up
     recurring float hours, so instead we'll use this to print time in the
-    HH:MM format.
+    H:MM format.
     """
     secs = hours * 3600.0
     h = int(secs / 3600.0)
@@ -426,11 +426,11 @@ for i, n in enumerate(path):
         o = path[i+1]
         rollg += g
         rollt += travel.totalTime()
-        print("{}. {:<15} - {:>15} {} {}  ${:.2f}".format(
+        print("{:>6}. {:<15} - {:>15} {} {}  ${:.2f}".format(
                 i + 1,
                 n.name.strip("*"),
                 o.name.strip("*"), timeformat(prevt), timeformat(rollt), g
                 ))
         prevt = rollt
 
-print("Total Cost: $ {:.2f}".format(rollg))
+print("     {}: $ {:.2f}".format('Total Cost', rollg))
