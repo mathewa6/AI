@@ -402,10 +402,11 @@ for i, n in enumerate(path):
         o = path[i+1]
         rollg += g
         rollt += travel.totalTime()
-        print("{:18} {:18} {} - {} ${:.2f}".format(
+        print("{}. {:18} {:18} {} - {} ${:.2f}".format(
+                i,
                 n.name.strip("*"),
                 o.name.strip("*"), timeformat(prevt), timeformat(rollt), g
                 ))
         prevt = rollt
 
-print("Total: ${:.1f}".format(rollg))
+print("Total: ${:.2f}".format(rollg))
