@@ -231,12 +231,16 @@ class PQ(object):
         if len(elements) > 0:
             i = self.data.index(elements[0])
             self.data[i] = (d, city)
+            heapq.heapify(self.data)
 
     def __len__(self):
         return len(self.data)
 
     def __repr__(self):
-        return "{}".format([x[1] for x in self.data])
+        return "\n".join([str(x) for x in self.data])
+
+    def __iter__(self):
+        return iter([x[1] for x in self.data])
 
 
 class Flights(object):
@@ -273,6 +277,8 @@ class Flights(object):
         """
         Returns Price[matrix] + hourly*(flight + wait)
         """
+        if not self.a or not self.b:
+            return sys.maxsize
         p = pm.price(self.a.idx, self.b.idx)
         if p == 0:
             return 0
@@ -331,9 +337,15 @@ def hc(city, inf):
     return a + b
 
 
+def f(city, inf):
+    ta = Flights(city.parent, city)
+    return ta.travelCost(inf.pmap, inf.hourly) + hc(city, inf)
+
+
 def pathfind(graph):
     distance = {}
-    pq = PQ([], lambda x: distance[x.name])
+
+    pq = PQ([], lambda x: f(x, graph))
 
     for city in graph.store:
         distance[city.name] = sys.maxsize
@@ -343,12 +355,12 @@ def pathfind(graph):
 
     pq.deprioritize(0, graph.start)
     distance[graph.start.name] = 0
-
     while len(pq) > 0:
         n = pq.pop()
         n.known = True
         for nbr in n.nbrs:
-            alt = distance[n.name] + hc(nbr, graph)
+            t = Flights(n, nbr)
+            alt = distance[n.name] + t.travelCost(graph.pmap, graph.hourly) + hc(nbr, graph)
             if (
                 not nbr.known and
                 alt < distance[nbr.name] and
@@ -360,6 +372,45 @@ def pathfind(graph):
 
     return graph.end
 
+    """
+    distance = {}
+    openq = PQ([], lambda x: distance[x.name] + hc(x, graph))
+    closel = []
+    current = graph.start
+
+    for city in graph.store:
+        distance[city.name] = sys.maxsize
+
+    openq.push(graph.start)
+
+    while True:
+        current = openq.pop()
+        currentf = distance[current.name] + hc(current, graph)
+
+        closel.append(current)
+
+        if current == graph.end:
+            break
+
+        for nb in current.nbrs:
+            t = Flights(current, nb)
+            c = t.travelCost(graph.pmap, graph.hourly)
+            if nb in closel:
+                continue
+
+            if (
+                graph.pmap.price(current.idx, nb.idx) + hc(nb, graph) < currentf or
+                nb not in openq
+            ):
+                alt = graph.pmap.price(current.idx, nb.idx) + hc(nb, graph)
+                distance[nb] = alt
+                nb.parent = current
+                if nb not in openq:
+                    openq.push(nb)
+                    openq.deprioritize(alt, nb)
+
+    return current
+    """
 
 # ------------------------------------------------------------------------------
 def timeformat(hours):
@@ -403,7 +454,7 @@ for i, n in enumerate(path):
         rollg += g
         rollt += travel.totalTime()
         print("{}. {:18} {:18} {} - {} ${:.2f}".format(
-                i,
+                i + 1,
                 n.name.strip("*"),
                 o.name.strip("*"), timeformat(prevt), timeformat(rollt), g
                 ))
