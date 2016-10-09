@@ -320,6 +320,15 @@ def djk(graph):
 
 # ------------------------------------------------------------------------------
 # main A* algorithm
+def hc(city, inf):
+    dest = inf.end
+    a = dest.distance(inf.end)
+    a = a * inf.least
+    t = dest.totalTime(inf.end)
+    b = inf.hourly * t
+
+    return a + b
+
 
 def pathfind(graph):
     pass
