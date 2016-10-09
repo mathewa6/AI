@@ -363,54 +363,14 @@ def pathfind(graph):
             alt = distance[n.name] + t.travelCost(graph.pmap, graph.hourly) + hc(nbr, graph)
             if (
                 not nbr.known and
-                alt < distance[nbr.name] and
+                alt < distance[nbr.name]  + hc(nbr, graph) and
                 graph.pmap.price(n.idx, nbr.idx) > 0
             ):
-                distance[nbr.name] = alt
+                distance[nbr.name] = distance[n.name] + t.travelCost(graph.pmap, graph.hourly)
                 pq.deprioritize(alt, nbr)
                 nbr.parent = n
 
     return graph.end
-
-    """
-    distance = {}
-    openq = PQ([], lambda x: distance[x.name] + hc(x, graph))
-    closel = []
-    current = graph.start
-
-    for city in graph.store:
-        distance[city.name] = sys.maxsize
-
-    openq.push(graph.start)
-
-    while True:
-        current = openq.pop()
-        currentf = distance[current.name] + hc(current, graph)
-
-        closel.append(current)
-
-        if current == graph.end:
-            break
-
-        for nb in current.nbrs:
-            t = Flights(current, nb)
-            c = t.travelCost(graph.pmap, graph.hourly)
-            if nb in closel:
-                continue
-
-            if (
-                graph.pmap.price(current.idx, nb.idx) + hc(nb, graph) < currentf or
-                nb not in openq
-            ):
-                alt = graph.pmap.price(current.idx, nb.idx) + hc(nb, graph)
-                distance[nb] = alt
-                nb.parent = current
-                if nb not in openq:
-                    openq.push(nb)
-                    openq.deprioritize(alt, nb)
-
-    return current
-    """
 
 # ------------------------------------------------------------------------------
 def timeformat(hours):
