@@ -87,6 +87,9 @@ class Node(object):
     def __repr__(self):
         return "{} >>> {}".format(self.name, self.parent)
 
+# ------------------------------------------------------------------------------
+# Class Definitions
+
 
 class City(Node):
     """
@@ -355,24 +358,35 @@ def pathfind(graph):
 
     pq.deprioritize(0, graph.start)
     distance[graph.start.name] = 0
+
     while len(pq) > 0:
         n = pq.pop()
         n.known = True
         for nbr in n.nbrs:
             t = Flights(n, nbr)
-            alt = distance[n.name] + t.travelCost(graph.pmap, graph.hourly) + hc(nbr, graph)
+            alt = (
+                distance[n.name] +  # Distance so far
+                t.travelCost(graph.pmap, graph.hourly) +  # Cost from pmap +TW
+                hc(nbr, graph)  # Heuristic from neighbour to graph.end
+                )
             if (
                 not nbr.known and
-                alt < distance[nbr.name]  + hc(nbr, graph) and
+                alt < distance[nbr.name] + hc(nbr, graph) and
                 graph.pmap.price(n.idx, nbr.idx) > 0
             ):
-                distance[nbr.name] = distance[n.name] + t.travelCost(graph.pmap, graph.hourly)
+                distance[nbr.name] = (
+                            distance[n.name] +
+                            t.travelCost(graph.pmap, graph.hourly)
+                            )
                 pq.deprioritize(alt, nbr)
                 nbr.parent = n
 
     return graph.end
 
+
 # ------------------------------------------------------------------------------
+
+
 def timeformat(hours):
     """
     I'm not entirely sure why... yet, but using datetime rounds up
@@ -384,7 +398,7 @@ def timeformat(hours):
     m = int((secs / 60.0) % 60.0)
     dt = datetime.time(h, m)
 
-    return dt.strftime("%H:%M")
+    return dt.strftime("%-H:%M")
 
 # Start by getting argument list from command line
 _p = getArguments()
@@ -396,7 +410,6 @@ n = pathfind(info) if info.future == 1 else djk(info)
 
 path = []
 while n is not None:
-    f = n.parent
     path.append(n)
     n = n.parent
 path = [x for x in reversed(path)]
@@ -413,11 +426,11 @@ for i, n in enumerate(path):
         o = path[i+1]
         rollg += g
         rollt += travel.totalTime()
-        print("{}. {:18} {:18} {} - {} ${:.2f}".format(
+        print("{}. {:<15} - {:>15} {} {}  ${:.2f}".format(
                 i + 1,
                 n.name.strip("*"),
                 o.name.strip("*"), timeformat(prevt), timeformat(rollt), g
                 ))
         prevt = rollt
 
-print("Total: ${:.2f}".format(rollg))
+print("Total Cost: $ {:.2f}".format(rollg))
