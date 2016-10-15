@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python3
 """
 README: CSE841 HW2
 
@@ -14,10 +14,12 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
 
+# TODO: Create argument parser for final deliverable.
+
 
 def plotvec(mx, colors, symbol, labels, title="Title"):
     """
-    Plots a given 3D matrix.
+    Plots a given list of 3D vectors
     Each element of mx is expected to be 3 x n.
     Number of elements in mx, colors and labels are expected to be same.
     """
@@ -31,7 +33,7 @@ def plotvec(mx, colors, symbol, labels, title="Title"):
                 symbol,
                 markersize=8,
                 color=colors[i],
-                alpha=1.0,
+                alpha=0.75,
                 label=labels[i])
 
     plt.title(title)
@@ -39,6 +41,10 @@ def plotvec(mx, colors, symbol, labels, title="Title"):
 
     plt.show()
 
+"""
+# ------------------------------------------------------------------------------
+# This is debug code
+np.random.seed(234134784384739784)
 mu_vec1 = np.array([0, 0, 0])
 cov_mat1 = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 class1_sample = np.random.multivariate_normal(mu_vec1, cov_mat1, 20).T
@@ -54,3 +60,17 @@ plotvec((class1_sample, class2_sample),
         'o',
         labels=["class1", "class2"],
         title="Samples for class 1 and class 2")
+# ------------------------------------------------------------------------------
+"""
+
+
+dbg_filename = "803Fall07/benA1.raw.face"
+data = None
+with open(debug.out, "rb") as bin:
+    data = bytearray(bin.read())
+    print(len(data))
+
+"""
+with open("debug.out", "wb") as bin:
+    bin.write(data)
+"""
