@@ -96,9 +96,9 @@ def amnesicmean(mcurrent, tcurrent, xinput, t1, t2, r, c):
     ut = None
     if tcurrent < t1:
         ut = 0
-    elif tcurrent < t2 and tcurrent > t1:
+    elif tcurrent < t2 and tcurrent >= t1:
         ut = c * (tcurrent - t1)/(t2 - t1)
-    elif tcurrent > t2:
+    elif tcurrent >= t2:
         ut = c + (tcurrent - t2)/r
 
     a = (tcurrent - 1 - ut)/tcurrent
@@ -129,8 +129,31 @@ def vec2im(vec, xdim=88, ydim=64):
 
 # ------------------------------------------------------------------------------
 
-dbg_filename = "803Fall07/benA3.raw.face"
 
+def getvecnames(file, folder="803Fall07/"):
+    fnames = []
+    with open(folder+file, "r") as data:
+        # To store the total number of people and testcases
+        n, tot = 0, 0
+
+        for i, line in enumerate(data):
+            # Check if it is an empty line
+            if line.strip():
+                # Store the first two total values
+                if i == 0:
+                    n = int(line)
+                elif i == 1:
+                    tot = int(line)
+                # Only after n and tot are stored, append filenames using them.
+                if i > (n - 1) + 2 and n > 0 and tot > 0:
+                    line = line.strip()
+                    fnames.append(folder+line)
+    return fnames
+
+# ------------------------------------------------------------------------------
+
+dbg_filename = "803Fall07/benA3.raw.face"
+"""
 data = None
 with open(dbg_filename, "rb") as bin:
     data = bytearray(bin.read())
@@ -161,6 +184,21 @@ with open(dbg_filename, "rb") as bin:
 
     dbg_data_1 = 255*np.array(norm, dtype='f')
     vec2im(dbg_data_1)
+"""
+files = getvecnames("traininglist.txt", "803Fall07/")
+meanvec = None
+for i, rawvec in enumerate(files):
+    with open(rawvec, "rb") as bin:
+        data = bytearray(bin.read())
+        ndata = np.frombuffer(data, dtype='u1')
+        norm = scalenorm(ndata)
+        if i == 0:
+            meanvec = norm
+            continue
+        else:
+            meanvec = amnesicmean(meanvec, i+1, norm, 5, 25, 100, 2)
+disp_meanvec = 255 * np.array(meanvec, dtype='f')
+vec2im(disp_meanvec)
 
 """
 # Use this for writing binary output to file.
