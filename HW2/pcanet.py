@@ -64,13 +64,42 @@ plotvec((class1_sample, class2_sample),
 """
 
 
+def scalenorm(vec, delta=128):
+    """
+    Performs scale normalization with a given delta value.
+    Returns the normalized vector as a list of floats.
+    """
+    for x in np.nditer(vec, op_flags=["readwrite"]):
+        if x < delta:
+            x[...] = 0
+
+    isz = not np.any(vec)
+    normvec = []
+
+    if not isz:
+        nmin = np.amin(vec)
+        nmax = np.amax(vec)
+        for x in np.nditer(vec):
+            y = (x - nmin)/(nmax - nmin)
+            normvec.append(y)
+
+    return normvec
+
+
 dbg_filename = "803Fall07/benA1.raw.face"
 data = None
-with open(debug.out, "rb") as bin:
+with open(dbg_filename, "rb") as bin:
     data = bytearray(bin.read())
+    # ndata = np.frombuffer(data, np.int8)
+    
+    norm = scalenorm(data, 128)
+
+    for x in norm:
+        print(x)
     print(len(data))
 
 """
+# Use this for writing binary output to file.
 with open("debug.out", "wb") as bin:
     bin.write(data)
 """
