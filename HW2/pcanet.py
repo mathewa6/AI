@@ -86,16 +86,41 @@ def scalenorm(vec, delta=128):
     return normvec
 
 
+def amnesicmean(mcurrent, tcurrent, xinput, t1, t2, r, c):
+    ut = None
+    if tcurrent < t1:
+        ut = 0
+    elif tcurrent < t2 and tcurrent > t1:
+        ut = c * (tcurrent - t1)/(t2 - t1)
+    elif tcurrent > t2:
+        ut = c + (tcurrent - t2)/r
+
+    a = (tcurrent - 1 - ut)/tcurrent
+    b = (1 + ut)/tcurrent
+
+    return (a * mcurrent) + (b * xinput)
+
 dbg_filename = "803Fall07/benA1.raw.face"
 data = None
 with open(dbg_filename, "rb") as bin:
     data = bytearray(bin.read())
-    # ndata = np.frombuffer(data, np.int8)
-    
-    norm = scalenorm(data, 128)
+    ndata = np.frombuffer(data, dtype='u1')
+    # print(np.array_equal(data, ndata))
+
+    dbg_data_1 = np.array([32, 128, 255], dtype='u1')
+    dbg_data_2 = np.array([64, 64, 127], dtype='u1')
+    # dbg_data = np.empty(3, dtype='u1')
+    # dbg_data = np.concatenate((dbg_data, dbg_data_1), axis=0)
+    # dbg_data = np.concatenate((dbg_data, dbg_data_2), axis=0)
+
+    # print(dbg_data)
+
+    print(amnesicmean(dbg_data_1, 2, dbg_data_2, 5, 25, 100, 2))
+
+    norm = scalenorm(dbg_data_1, 0)
 
     for x in norm:
-        print(x)
+        print(x, end=" ")
     print(len(data))
 
 """
