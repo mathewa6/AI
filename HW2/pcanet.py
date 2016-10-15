@@ -93,18 +93,28 @@ def amnesicmean(mcurrent, tcurrent, xinput, t1, t2, r, c):
     """
     mcurrent = np.array(mcurrent)
     xinput = np.array(xinput)
-    ut = None
-    if tcurrent < t1:
-        ut = 0
-    elif tcurrent < t2 and tcurrent >= t1:
-        ut = c * (tcurrent - t1)/(t2 - t1)
-    elif tcurrent >= t2:
-        ut = c + (tcurrent - t2)/r
 
-    a = (tcurrent - 1 - ut)/tcurrent
-    b = (1 + ut)/tcurrent
+    u = u_t(tcurrent, t1, t2, r, c)
+
+    a = (tcurrent - 1 - u)/tcurrent
+    b = (1 + u)/tcurrent
 
     return (a * mcurrent) + (b * xinput)
+
+
+def u_t(t, t1, t2, r, c):
+    """
+    This returns the value of the amnesic parameter for a given t.
+    """
+    ut = None
+    if t < t1:
+        ut = 0
+    elif t < t2 and t >= t1:
+        ut = c * (t - t1)/(t2 - t1)
+    elif t >= t2:
+        ut = c + (t - t2)/r
+
+    return ut
 
 
 def meannormal(xinput, mean):
@@ -120,6 +130,7 @@ def vec2im(vec, xdim=88, ydim=64):
     Takes a numpy array(vec) and it's unflattened dimensions
     and displays the image contained.
     """
+    # vec = np.array(vec)
     im = vec.reshape(xdim, ydim)
     plt.rcParams["toolbar"] = "None"
     fig = plt.figure(figsize=(6, 6), facecolor="white")
@@ -131,6 +142,10 @@ def vec2im(vec, xdim=88, ydim=64):
 
 
 def getvecnames(file, folder="803Fall07/"):
+    """
+    Returns a list of binary image vectors from a given text file.
+    folder parameter is appended to each filename in the return list.
+    """
     fnames = []
     with open(folder+file, "r") as data:
         # To store the total number of people and testcases
@@ -185,21 +200,65 @@ with open(dbg_filename, "rb") as bin:
     dbg_data_1 = 255*np.array(norm, dtype='f')
     vec2im(dbg_data_1)
 """
+
 files = getvecnames("traininglist.txt", "803Fall07/")
 meanvec = None
+allinput = []
+scat = []
+pcv = []
+
 for i, rawvec in enumerate(files):
+    if i == 4:
+         break
+
     with open(rawvec, "rb") as bin:
         data = bytearray(bin.read())
         ndata = np.frombuffer(data, dtype='u1')
+        allinput.append(ndata)
         norm = scalenorm(ndata)
+
         if i == 0:
             meanvec = norm
             continue
         else:
-            meanvec = amnesicmean(meanvec, i+1, norm, 5, 25, 100, 2)
+            t1 = 25
+            t2 = 75
+            r = 10
+            c = 2
+            t = i+1
+
+            meanvec = amnesicmean(meanvec, t, norm, t1, t2, r, c)
+            scat.append(meannormal(norm, meanvec))
+
+            for j in range(1, t):
+                # print(i,len(scat))
+                u = scat[j-1]
+                if j == i:
+                    # print(np.array_equal())
+                    # print(j, i)
+                    pcv.append(i)
+                else:
+                    v = pcv[j-1]
+                    norm = v / np.linalg.norm(v)
+                    # a)
+                    y = np.inner(u, norm)
+                    # b)
+                    # TODO Check if u_t should be i+1 or i
+                    u_amn = u_t(t, t1, t2, r, c)
+                    w1 = (t - 1 - u_amn)/t
+                    w2 = (1 + u_amn)/t
+                    pcv[j-1] = (w1 * v) + (w2 * y * u)
+                    # c)
+                    scat[j] = u - (np.inner(y, norm))
+
 disp_meanvec = 255 * np.array(meanvec, dtype='f')
 vec2im(disp_meanvec)
 
+disp_pcv = 255 * np.array(pcv[0], dtype='f')
+print(np.dot(scat[0], scat[1]))
+vec2im(allinput[0])
+
+vec2im(disp_pcv)
 """
 # Use this for writing binary output to file.
 with open("debug.out", "wb") as bin:
