@@ -87,6 +87,12 @@ def scalenorm(vec, delta=128):
 
 
 def amnesicmean(mcurrent, tcurrent, xinput, t1, t2, r, c):
+    """
+    Calculates a weighted average of inputs so far.
+    Parameters t1, t2, r and c are used for u(t) calculation.
+    """
+    mcurrent = np.array(mcurrent)
+    xinput = np.array(xinput)
     ut = None
     if tcurrent < t1:
         ut = 0
@@ -100,28 +106,46 @@ def amnesicmean(mcurrent, tcurrent, xinput, t1, t2, r, c):
 
     return (a * mcurrent) + (b * xinput)
 
-dbg_filename = "803Fall07/benA1.raw.face"
+
+def vec2im(vec, xdim=88, ydim=64):
+    """
+    Takes a numpy array(vec) and it's unflattened dimensions
+    and displays the image contained.
+    """
+    im = vec.reshape(xdim, ydim)
+    plt.rcParams["toolbar"] = "None"
+    fig = plt.figure(figsize=(6, 6), facecolor="white")
+    plt.imshow(im, plt.cm.gray)
+    plt.colorbar()
+    plt.show()
+
+dbg_filename = "803Fall07/benA3.raw.face"
 data = None
 with open(dbg_filename, "rb") as bin:
     data = bytearray(bin.read())
     ndata = np.frombuffer(data, dtype='u1')
     # print(np.array_equal(data, ndata))
 
-    dbg_data_1 = np.array([32, 128, 255], dtype='u1')
-    dbg_data_2 = np.array([64, 64, 127], dtype='u1')
+    dbg_data_1 = np.array([32, 64, 128], dtype='u1')
+    dbg_data_2 = np.array([64, 128, 255], dtype='u1')
     # dbg_data = np.empty(3, dtype='u1')
     # dbg_data = np.concatenate((dbg_data, dbg_data_1), axis=0)
     # dbg_data = np.concatenate((dbg_data, dbg_data_2), axis=0)
 
     # print(dbg_data)
 
+    norm = scalenorm(dbg_data_1, 0)
+    dbg_data_1 = scalenorm(dbg_data_1, 0)
+    dbg_data_2 = scalenorm(dbg_data_2, 0)
+
+    # Update (i + 1) the tcurrent param below when placed in for loop
     print(amnesicmean(dbg_data_1, 2, dbg_data_2, 5, 25, 100, 2))
 
-    norm = scalenorm(dbg_data_1, 0)
-
     for x in norm:
-        print(x, end=" ")
+        print(x, end=' ')
     print(len(data))
+    
+    vec2im(ndata)
 
 """
 # Use this for writing binary output to file.
