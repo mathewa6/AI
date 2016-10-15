@@ -107,6 +107,14 @@ def amnesicmean(mcurrent, tcurrent, xinput, t1, t2, r, c):
     return (a * mcurrent) + (b * xinput)
 
 
+def meannormal(xinput, mean):
+    """
+    Returns the scatter vector, u for x.
+    Use this along with amnesicmean().
+    """
+    return np.subtract(xinput, mean)
+
+
 def vec2im(vec, xdim=88, ydim=64):
     """
     Takes a numpy array(vec) and it's unflattened dimensions
@@ -119,7 +127,10 @@ def vec2im(vec, xdim=88, ydim=64):
     plt.colorbar()
     plt.show()
 
+# ------------------------------------------------------------------------------
+
 dbg_filename = "803Fall07/benA3.raw.face"
+
 data = None
 with open(dbg_filename, "rb") as bin:
     data = bytearray(bin.read())
@@ -134,18 +145,22 @@ with open(dbg_filename, "rb") as bin:
 
     # print(dbg_data)
 
-    norm = scalenorm(dbg_data_1, 0)
+    norm = scalenorm(ndata, 0)
+
     dbg_data_1 = scalenorm(dbg_data_1, 0)
     dbg_data_2 = scalenorm(dbg_data_2, 0)
 
     # Update (i + 1) the tcurrent param below when placed in for loop
-    print(amnesicmean(dbg_data_1, 2, dbg_data_2, 5, 25, 100, 2))
+    mean = amnesicmean(dbg_data_1, 2, dbg_data_2, 5, 25, 100, 2)
+    print(mean)
+    print(dbg_data_1, meannormal(dbg_data_1, mean))
 
-    for x in norm:
+    for x in dbg_data_1:
         print(x, end=' ')
     print(len(data))
-    
-    vec2im(ndata)
+
+    dbg_data_1 = 255*np.array(norm, dtype='f')
+    vec2im(dbg_data_1)
 
 """
 # Use this for writing binary output to file.
