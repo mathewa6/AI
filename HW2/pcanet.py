@@ -64,11 +64,12 @@ plotvec((class1_sample, class2_sample),
 """
 
 
-def scalenorm(vec, delta=128):
+def scalenorm(v, delta=128):
     """
     Performs scale normalization with a given delta value.
     Returns the normalized vector as a list of floats.
     """
+    vec = v
     for x in np.nditer(vec, op_flags=["readwrite"]):
         if x < delta:
             x[...] = 0
