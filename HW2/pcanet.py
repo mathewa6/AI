@@ -201,6 +201,9 @@ with open(dbg_filename, "rb") as bin:
     vec2im(dbg_data_1)
 """
 
+"""
+# ------------------------------------------------------------------------------
+
 files = getvecnames("traininglist.txt", "803Fall07/")
 meanvec = None
 allinput = []
@@ -208,9 +211,9 @@ scat = []
 pcv = []
 eig = []
 
-for i, rawvec in enumerate(files):
+for t, rawvec in enumerate(files):
     # if i == 4:
-    #      break
+    #    break
 
     with open(rawvec, "rb") as bin:
         data = bytearray(bin.read())
@@ -218,7 +221,7 @@ for i, rawvec in enumerate(files):
         allinput.append(ndata)
         norm = scalenorm(ndata)
 
-        if i == 0:
+        if t == 0:
             meanvec = norm
             continue
         else:
@@ -226,45 +229,99 @@ for i, rawvec in enumerate(files):
             t2 = 75
             r = 10
             c = 2
-            t = i+1
+            x = t+1
 
             # meanvec = amnesicmean(meanvec, t, norm, t1, t2, r, c)
-            meanvec = np.inner((i/(i+1)), meanvec) + np.inner((1/i+1), norm)
+            meanvec = np.inner((t/(t+1)), meanvec) + np.inner((1/t+1), norm)
             scat.append(meannormal(norm, meanvec))
 
-            for j in range(1, t):
+            for i in range(1, x):
                 # print(i,len(scat))
-                u = scat[j-1]
-                if j == i:
+                u = scat[i-1]
+                if i == t:
                     # print(np.array_equal())
                     # print(j, i)
                     pcv.append(u)
                     eig.append(np.linalg.norm(u))
                 else:
-                    v = pcv[j-1]
-                    norm = v / np.linalg.norm(v)
+                    v = pcv[i-1]
+                    norval = v / np.linalg.norm(v)
                     # a)
-                    y = np.inner(u, norm)
+                    y = np.inner(u, norval)
                     # b)
                     # TODO Check if u_t should be i+1 or i
-                    u_amn = u_t(t, t1, t2, r, c)
+                    u_amn = 2  # u_t(t, t1, t2, r, c)
                     w1 = (t - 1 - u_amn)/t
                     w2 = (1 + u_amn)/t
-                    pcv[j-1] = (w1 * v) + (w2 * y * u)
-                    eig[j-1] = np.linalg.norm(pcv[j-1])
+                    pcv[i-1] = (w1 * v) + (w2 * y * u)
+                    eig[i-1] = np.linalg.norm(pcv[i-1])
                     # c) j or j-1 ?
-                    scat[j-1] = u - (np.inner(y, norm))
+                    scat[i-1] = u - (np.inner(y, norval))
+
+eig_pairs = [(np.abs(eig[i]), pcv[i], i) for i in range(len(eig))]
+eig_pairs.sort(key=lambda x: x[0], reverse=True)
+
+denom = 0
+for p in scat:
+    denom += (1/(len(scat) - 1)) * (np.linalg.norm(p) ** 2)
+print(denom, len(scat))
+
+num = 0
+for l in eig_pairs:
+    num += l[0]
+    ratio = num/denom
+    # if ratio > 0.95:
+    print(l[0], l[2], ratio)
 
 disp_meanvec = 255 * np.array(meanvec, dtype='f')
 vec2im(disp_meanvec)
 
 disp_pcv = 255 * np.array(pcv[1], dtype='f')
-print(eig)
+# print(eig_pairs)
 vec2im(allinput[1])
 
 vec2im(disp_pcv)
+
+# ------------------------------------------------------------------------------
+"""
 """
 # Use this for writing binary output to file.
 with open("debug.out", "wb") as bin:
     bin.write(data)
+"""
+"""
+# ------------------------------------------------------------------------------
+
+files = getvecnames("traininglist.txt", "803Fall07/")
+meanvec = None
+allinput = []
+scat = None
+
+for t, rawvec in enumerate(files):
+    with open(rawvec, "rb") as bin:
+        data = bytearray(bin.read())
+        ndata = np.frombuffer(data, dtype='u1')
+        # norm = scalenorm(ndata)
+        allinput.append(ndata)
+
+dimensions = len(allinput[0])
+
+# meanvec = np.array([np.mean(allinput[x, :]) for x in range(dimensions)])
+meanvec = [0 for x in range(dimensions)]
+for v in allinput:
+    for d in range(dimensions):
+        meanvec[d] += v[d]
+meanvec = np.array(meanvec, dtype='f')
+meanvec /= dimensions
+
+vec2im(meanvec)
+
+scat = np.zeros((dimensions, dimensions))
+for i, v in enumerate(allinput):
+    scat += (v - meanvec).dot((v - meanvec).T)
+
+eig, pcv = np.linalg.eig(scat)
+print(len(eig))
+vec2im(pcv[0])
+# ------------------------------------------------------------------------------
 """
