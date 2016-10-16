@@ -14,7 +14,48 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
 
-# TODO: Create argument parser for final deliverable.
+from argparse import ArgumentParser as args
+
+
+def getArguments():
+    arguments = args(
+                description="""Applies CCI PCA to an image set.
+                            See CSE841 HW2 for spec..""")
+    arguments.add_argument(
+                            "-l", "--learn",
+                            action="store",
+                            type=int,
+                            metavar="epochs",
+                            nargs=1,
+                            help="Indicate whether to learn or test.")
+    arguments.add_argument(
+                            "-f",
+                            action="store",
+                            metavar="filenamelist",
+                            type=str,
+                            nargs=1,
+                            required=True,
+                            help="File containing list of filenames.")
+    arguments.add_argument(
+                            "-d",
+                            action="store",
+                            metavar="database",
+                            type=str,
+                            nargs=1,
+                            required=True,
+                            help="The PCANet binary database file.")
+    arguments.add_argument(
+                            "-o",
+                            action="store",
+                            metavar="output",
+                            type=str,
+                            nargs=1,
+                            required=True,
+                            help="Output reports file")
+
+    ip = args.parse_args(arguments)
+
+    return ip.learn, ip.f[0], ip.d[0], ip.o[0]
 
 
 def plotvec(mx, colors, symbol, labels, title="Title"):
@@ -142,13 +183,23 @@ def vec2im(vec, xdim=88, ydim=64):
 # ------------------------------------------------------------------------------
 
 
-def getvecnames(file, folder="803Fall07/"):
+def getvecnames(filen, folder=None):
     """
     Returns a list of binary image vectors from a given text file.
     folder parameter is appended to each filename in the return list.
     """
     fnames = []
-    with open(folder+file, "r") as data:
+    
+    # Clean up folder name for use with each image in file.
+    if "/" in filen:
+        struc = filen.split("/")
+        filen = struc[-1]
+        struc.remove(filen)
+        folder = '/'.join(struc)
+        folder += '/'
+        print(filen, folder, struc)
+
+    with open(folder+filen if folder else filen, "r") as data:
         # To store the total number of people and testcases
         n, tot = 0, 0
 
@@ -163,12 +214,18 @@ def getvecnames(file, folder="803Fall07/"):
                 # Only after n and tot are stored, append filenames using them.
                 if i > (n - 1) + 2 and n > 0 and tot > 0:
                     line = line.strip()
-                    fnames.append(folder+line)
+                    fnames.append(folder+line if folder else line)
     return fnames
 
 # ------------------------------------------------------------------------------
+arg = getArguments()
+print(arg)
+epochs = arg[0]
+filename = arg[1]
+db = arg[2]
+op = arg[3]
 
-files = getvecnames("input.txt", "Test/")
+files = getvecnames(filename)
 meanvec = None
 allinput = []
 scat = []
