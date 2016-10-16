@@ -167,44 +167,7 @@ def getvecnames(file, folder="803Fall07/"):
 
 # ------------------------------------------------------------------------------
 
-dbg_filename = "803Fall07/benA3.raw.face"
-"""
-data = None
-with open(dbg_filename, "rb") as bin:
-    data = bytearray(bin.read())
-    ndata = np.frombuffer(data, dtype='u1')
-    # print(np.array_equal(data, ndata))
-
-    dbg_data_1 = np.array([32, 64, 128], dtype='u1')
-    dbg_data_2 = np.array([64, 128, 255], dtype='u1')
-    # dbg_data = np.empty(3, dtype='u1')
-    # dbg_data = np.concatenate((dbg_data, dbg_data_1), axis=0)
-    # dbg_data = np.concatenate((dbg_data, dbg_data_2), axis=0)
-
-    # print(dbg_data)
-
-    norm = scalenorm(ndata, 0)
-
-    dbg_data_1 = scalenorm(dbg_data_1, 0)
-    dbg_data_2 = scalenorm(dbg_data_2, 0)
-
-    # Update (i + 1) the tcurrent param below when placed in for loop
-    mean = amnesicmean(dbg_data_1, 2, dbg_data_2, 5, 25, 100, 2)
-    print(mean)
-    print(dbg_data_1, meannormal(dbg_data_1, mean))
-
-    for x in dbg_data_1:
-        print(x, end=' ')
-    print(len(data))
-
-    dbg_data_1 = 255*np.array(norm, dtype='f')
-    vec2im(dbg_data_1)
-"""
-
-"""
-# ------------------------------------------------------------------------------
-
-files = getvecnames("traininglist.txt", "803Fall07/")
+files = getvecnames("input.txt", "Test/")
 meanvec = None
 allinput = []
 scat = []
@@ -219,7 +182,7 @@ for t, rawvec in enumerate(files):
         data = bytearray(bin.read())
         ndata = np.frombuffer(data, dtype='u1')
         allinput.append(ndata)
-        norm = scalenorm(ndata)
+        norm = scalenorm(ndata, 1)
 
         if t == 0:
             meanvec = norm
@@ -269,21 +232,21 @@ print(denom, len(scat))
 num = 0
 for l in eig_pairs:
     num += l[0]
-    ratio = num/denom
+    ratio = l[0]/denom
     # if ratio > 0.95:
     print(l[0], l[2], ratio)
 
 disp_meanvec = 255 * np.array(meanvec, dtype='f')
 vec2im(disp_meanvec)
 
-disp_pcv = 255 * np.array(pcv[1], dtype='f')
 # print(eig_pairs)
-vec2im(allinput[1])
-
-vec2im(disp_pcv)
+for im in allinput:
+    vec2im(im)
+for im in pcv:
+    disp_pcv = 255 * np.array(pcv[0], dtype='f')
+    vec2im(disp_pcv)
 
 # ------------------------------------------------------------------------------
-"""
 """
 # Use this for writing binary output to file.
 with open("debug.out", "wb") as bin:
