@@ -125,7 +125,7 @@ def scalenorm(v, delta=128):
             y = (x - nmin)/(nmax - nmin)
             normvec.append(y)
 
-    return normvec
+    return np.array(normvec, dtype='f')
 
 
 def amnesicmean(mcurrent, tcurrent, xinput, t1, t2, r, c):
@@ -189,7 +189,7 @@ def getvecnames(filen, folder=None):
     folder parameter is appended to each filename in the return list.
     """
     fnames = []
-    
+
     # Clean up folder name for use with each image in file.
     if "/" in filen:
         struc = filen.split("/")
@@ -217,6 +217,14 @@ def getvecnames(filen, folder=None):
                     fnames.append(folder+line if folder else line)
     return fnames
 
+
+def writefile(filen, data):
+    """
+    Use this for writing binary output to file.
+    """
+    with open(filen, "wb") as bin:
+        bin.write(data)
+
 # ------------------------------------------------------------------------------
 arg = getArguments()
 print(arg)
@@ -225,91 +233,89 @@ filename = arg[1]
 db = arg[2]
 op = arg[3]
 
-files = getvecnames(filename)
-meanvec = None
-allinput = []
-scat = []
-pcv = []
-eig = []
+if epochs:
+    epochs = epochs[0]
+    files = getvecnames(filename)
+    meanvec = None
+    allinput = []
+    scat = []
+    pcv = []
+    eig = []
 
-for t, rawvec in enumerate(files):
-    # if i == 4:
-    #    break
+    for t, rawvec in enumerate(files):
+        # if i == 4:
+        #    break
 
-    with open(rawvec, "rb") as bin:
-        data = bytearray(bin.read())
-        ndata = np.frombuffer(data, dtype='u1')
-        allinput.append(ndata)
-        norm = scalenorm(ndata, 1)
+        with open(rawvec, "rb") as bin:
+            data = bytearray(bin.read())
+            ndata = np.frombuffer(data, dtype='u1')
+            allinput.append(ndata)
+            norm = scalenorm(ndata, 1)
 
-        if t == 0:
-            meanvec = norm
-            continue
-        else:
-            t1 = 25
-            t2 = 75
-            r = 10
-            c = 2
-            x = t+1
+            if t == 0:
+                meanvec = norm
+                continue
+            else:
+                t1 = 25
+                t2 = 75
+                r = 10
+                c = 2
+                x = t+1
 
-            # meanvec = amnesicmean(meanvec, t, norm, t1, t2, r, c)
-            meanvec = np.inner((t/(t+1)), meanvec) + np.inner((1/t+1), norm)
-            scat.append(meannormal(norm, meanvec))
+                # meanvec = amnesicmean(meanvec, t, norm, t1, t2, r, c)
+                meanvec = np.inner((t/(t+1)), meanvec) + np.inner((1/t+1), norm)
+                scat.append(meannormal(norm, meanvec))
 
-            for i in range(1, x):
-                # print(i,len(scat))
-                u = scat[i-1]
-                if i == t:
-                    # print(np.array_equal())
-                    # print(j, i)
-                    pcv.append(u)
-                    eig.append(np.linalg.norm(u))
-                else:
-                    v = pcv[i-1]
-                    norval = v / np.linalg.norm(v)
-                    # a)
-                    y = np.inner(u, norval)
-                    # b)
-                    # TODO Check if u_t should be i+1 or i
-                    u_amn = 2  # u_t(t, t1, t2, r, c)
-                    w1 = (t - 1 - u_amn)/t
-                    w2 = (1 + u_amn)/t
-                    pcv[i-1] = (w1 * v) + (w2 * y * u)
-                    eig[i-1] = np.linalg.norm(pcv[i-1])
-                    # c) j or j-1 ?
-                    scat[i-1] = u - (np.inner(y, norval))
+                for i in range(1, x):
+                    # print(i,len(scat))
+                    u = scat[i-1]
+                    if i == t:
+                        # print(np.array_equal())
+                        # print(j, i)
+                        pcv.append(norm)
+                        eig.append(np.linalg.norm(norm))
+                    else:
+                        v = pcv[i-1]
+                        norval = v / np.linalg.norm(v)
+                        # a)
+                        y = np.inner(u, norval)
+                        # b)
+                        # TODO Check if u_t should be i+1 or i
+                        u_amn = 2  # u_t(t, t1, t2, r, c)
+                        w1 = (t - 1 - u_amn)/t
+                        w2 = (1 + u_amn)/t
+                        pcv[i-1] = (w1 * v) + (w2 * y * u)
+                        eig[i-1] = np.linalg.norm(pcv[i-1])
+                        # c) j or j-1 ?
+                        scat[i-1] = u - (np.inner(y, norval))
 
-eig_pairs = [(np.abs(eig[i]), pcv[i], i) for i in range(len(eig))]
-eig_pairs.sort(key=lambda x: x[0], reverse=True)
+    eig_pairs = [(np.abs(eig[i]), pcv[i], i) for i in range(len(eig))]
+    eig_pairs.sort(key=lambda x: x[0], reverse=True)
 
-denom = 0
-for p in scat:
-    denom += (1/(len(scat) - 1)) * (np.linalg.norm(p) ** 2)
-print(denom, len(scat))
+    denom = 0
+    for p in scat:
+        denom += (1/(len(scat) - 1)) * (np.linalg.norm(p) ** 2)
+    print(denom, len(scat))
 
-num = 0
-for l in eig_pairs:
-    num += l[0]
-    ratio = l[0]/denom
-    # if ratio > 0.95:
-    print(l[0], l[2], ratio)
+    num = 0
+    for l in eig_pairs:
+        num += l[0]
+        ratio = l[0]/denom
+        # if ratio > 0.95:
+        print(l[0], l[2], ratio)
 
-disp_meanvec = 255 * np.array(meanvec, dtype='f')
-vec2im(disp_meanvec)
+    disp_meanvec = 255 * np.array(meanvec, dtype='f')
+    vec2im(disp_meanvec)
 
-# print(eig_pairs)
-for im in allinput:
-    vec2im(im)
-for im in pcv:
-    disp_pcv = 255 * np.array(pcv[0], dtype='f')
-    vec2im(disp_pcv)
+    # print(eig_pairs)
+    for im in allinput:
+        vec2im(im)
+    for im in pcv:
+        disp_pcv = 255 * np.array(pcv[0], dtype='f')
+        vec2im(disp_pcv)
 
 # ------------------------------------------------------------------------------
-"""
-# Use this for writing binary output to file.
-with open("debug.out", "wb") as bin:
-    bin.write(data)
-"""
+
 """
 # ------------------------------------------------------------------------------
 
