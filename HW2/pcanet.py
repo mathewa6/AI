@@ -206,10 +206,11 @@ meanvec = None
 allinput = []
 scat = []
 pcv = []
+eig = []
 
 for i, rawvec in enumerate(files):
-    if i == 4:
-         break
+    # if i == 4:
+    #      break
 
     with open(rawvec, "rb") as bin:
         data = bytearray(bin.read())
@@ -227,7 +228,8 @@ for i, rawvec in enumerate(files):
             c = 2
             t = i+1
 
-            meanvec = amnesicmean(meanvec, t, norm, t1, t2, r, c)
+            # meanvec = amnesicmean(meanvec, t, norm, t1, t2, r, c)
+            meanvec = np.inner((i/(i+1)), meanvec) + np.inner((1/i+1), norm)
             scat.append(meannormal(norm, meanvec))
 
             for j in range(1, t):
@@ -236,7 +238,8 @@ for i, rawvec in enumerate(files):
                 if j == i:
                     # print(np.array_equal())
                     # print(j, i)
-                    pcv.append(i)
+                    pcv.append(u)
+                    eig.append(np.linalg.norm(u))
                 else:
                     v = pcv[j-1]
                     norm = v / np.linalg.norm(v)
@@ -248,15 +251,16 @@ for i, rawvec in enumerate(files):
                     w1 = (t - 1 - u_amn)/t
                     w2 = (1 + u_amn)/t
                     pcv[j-1] = (w1 * v) + (w2 * y * u)
-                    # c)
-                    scat[j] = u - (np.inner(y, norm))
+                    eig[j-1] = np.linalg.norm(pcv[j-1])
+                    # c) j or j-1 ?
+                    scat[j-1] = u - (np.inner(y, norm))
 
 disp_meanvec = 255 * np.array(meanvec, dtype='f')
 vec2im(disp_meanvec)
 
-disp_pcv = 255 * np.array(pcv[0], dtype='f')
-print(np.dot(scat[0], scat[1]))
-vec2im(allinput[0])
+disp_pcv = 255 * np.array(pcv[1], dtype='f')
+print(eig)
+vec2im(allinput[1])
 
 vec2im(disp_pcv)
 """
