@@ -197,7 +197,6 @@ def getvecnames(filen, folder=None):
         struc.remove(filen)
         folder = '/'.join(struc)
         folder += '/'
-        print(filen, folder, struc)
 
     with open(folder+filen if folder else filen, "r") as data:
         # To store the total number of people and testcases
@@ -236,12 +235,83 @@ op = arg[3]
 if epochs:
     epochs = epochs[0]
     files = getvecnames(filename)
-    meanvec = None
     allinput = []
-    scat = []
-    pcv = []
-    eig = []
 
+    for t, rawvec in enumerate(files):
+        with open(rawvec, "rb") as bin:
+            data = bytearray(bin.read())
+            ndata = np.frombuffer(data, dtype='u1')
+            allinput.append(ndata)
+
+    meanvec = scalenorm(allinput[0], 1)
+    dimensions = len(allinput[0])
+    scat = [np.zeros(len(allinput[0])) for e in allinput]
+    yi = [np.zeros(len(allinput[0])) for e in range(len(allinput[0]))]
+    pcv = [np.zeros(len(allinput[0])) for e in allinput]
+    eig = [0 for e in allinput]
+    k = len(allinput)
+    n = len(allinput)
+
+    for e in range(epochs):
+        for t in range(len(allinput)):
+
+            x = allinput[t]
+            norm = scalenorm(x, 1)
+            calct = t + 1
+            meanvec = (
+                        np.inner((calct/(calct+1)), meanvec) +
+                        np.inner((1/calct+1), norm))
+            scat[t] = (meannormal(norm, meanvec))
+
+            for i in range(min(k, calct)):
+                # print(i)
+                if i == t:
+                    # print("NN")
+                    pcv[i] = scat[t]  # scat[t]
+                else:
+                    # a)
+                    v = pcv[i]
+                    norval = v / np.linalg.norm(v)
+                    yi[i] = np.dot(scat[i], norval)
+                    # print(yi[i])
+                    # b)
+                    u_amn = 2  # u_t(t, t1, t2, r, c)
+                    w1 = (calct - 1 - u_amn)/calct
+                    w2 = (1 + u_amn)/calct
+                    # print(w1, w2)
+                    pcv[i] = (w1 * pcv[i]) + (w2 * yi[i] * scat[i])
+                    eig[i] = np.linalg.norm(pcv[i])
+                    # print(eig[i])
+                    # c)
+                    v = pcv[i]
+                    norval = v / np.linalg.norm(v)
+                    # scat[i+1] = scat[i] - (np.dot(yi[i], norval))
+                    # vec2im(255 * pcv[i])
+    eig_pairs = [(np.abs(eig[i]), pcv[i], i) for i in range(len(eig))]
+    eig_pairs.sort(key=lambda x: x[0], reverse=True)
+
+    denom = 0
+    for p in scat:
+        denom += (1/(len(scat) - 1)) * (np.linalg.norm(p) ** 2)
+
+    num = 0
+    ratios = []
+    for l in eig_pairs:
+        num += l[0]
+        ratios.append(num/denom)
+    h = max(ratios)
+    l = min(ratios)
+    idx = 0
+    for i, r in enumerate(ratios):
+        if (h - r)/(h - l) < 0.95:
+            idx = i
+            break
+    area1v = [eig_pairs[i] for i in range(idx)]
+
+    print(area1v)
+    vec2im(meanvec)
+    # vec2im(eig_pairs[4][1])
+"""
     for t, rawvec in enumerate(files):
         # if i == 4:
         #    break
@@ -263,12 +333,15 @@ if epochs:
                 x = t+1
 
                 # meanvec = amnesicmean(meanvec, t, norm, t1, t2, r, c)
-                meanvec = np.inner((t/(t+1)), meanvec) + np.inner((1/t+1), norm)
+                meanvec = (
+                            np.inner((t/(t+1)), meanvec) +
+                            np.inner((1/t+1), norm))
+
                 scat.append(meannormal(norm, meanvec))
 
-                for i in range(1, x):
+                for i in range(0, x):
                     # print(i,len(scat))
-                    u = scat[i-1]
+                    u = scat[i]
                     if i == t:
                         # print(np.array_equal())
                         # print(j, i)
@@ -313,7 +386,7 @@ if epochs:
     for im in pcv:
         disp_pcv = 255 * np.array(pcv[0], dtype='f')
         vec2im(disp_pcv)
-
+"""
 # ------------------------------------------------------------------------------
 
 """
