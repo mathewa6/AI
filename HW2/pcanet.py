@@ -232,7 +232,6 @@ def writefile(filen, data):
 
 # ------------------------------------------------------------------------------
 arg = getArguments()
-print(arg)
 epochs = arg[0]
 filename = arg[1]
 db = arg[2]
@@ -273,24 +272,19 @@ if epochs:
             scat[t] = (meannormal(norm, meanvec))
 
             for i in range(min(k, calct)):
-                # print(i)
                 if i == t:
-                    # print("NN")
                     pcv[i] = scat[t]  # scat[t]
                 else:
                     # a)
                     v = pcv[i]
                     norval = v / np.linalg.norm(v)
                     yi[i] = np.dot(scat[i], norval)
-                    # print(yi[i])
                     # b)
                     u_amn = 2  # u_t(t, t1, t2, r, c)
                     w1 = (calct - 1 - u_amn)/calct
                     w2 = (1 + u_amn)/calct
-                    # print(w1, w2)
                     pcv[i] = (w1 * pcv[i]) + (w2 * yi[i] * scat[i])
                     eig[i] = np.linalg.norm(pcv[i])
-                    # print(eig[i])
                     # c)
                     v = pcv[i]
                     norval = v / np.linalg.norm(v)
@@ -333,7 +327,6 @@ if epochs:
         for v in area1v:
             y.append(np.dot(np.transpose(v[1]), u))
         rspy.append(np.array(y, dtype='f'))
-    print(len(rspy))
 
     with open(".tmp", 'w') as ktemp:
         ktemp.write(str(k))
@@ -366,10 +359,88 @@ else:
     k = 0
     with open(".tmp", 'r') as ktemp:
         k = int(ktemp.read())
-        print(k)
 
     with open(db, 'rb') as dbr:
         y = bytearray(dbr.read())
         y = np.frombuffer(y, dtype='f')
         y = list(chunks(y, k))
         y = [np.array(x, dtype='f') for x in y]
+
+    scat = [np.zeros(len(allinput[0])) for e in allinput]
+    yi = [np.zeros(len(allinput[0])) for e in range(len(allinput[0]))]
+    pcv = [np.zeros(len(allinput[0])) for e in allinput]
+    eig = [0 for e in allinput]
+    knew = len(allinput)
+    n = len(allinput)
+
+    for t in range(len(allinput)):
+
+        x = allinput[t]
+        norm = scalenorm(x, 1)
+        calct = t + 1
+        meanvec = (
+                    np.inner((calct/(calct+1)), meanvec) +
+                    np.inner((1/calct+1), norm))
+        scat[t] = (meannormal(norm, meanvec))
+
+        for i in range(min(knew, calct)):
+            if i == t:
+                pcv[i] = scat[t]  # scat[t]
+            else:
+                # a)
+                v = pcv[i]
+                norval = v / np.linalg.norm(v)
+                yi[i] = np.dot(scat[i], norval)
+                # b)
+                u_amn = 2  # u_t(t, t1, t2, r, c)
+                w1 = (calct - 1 - u_amn)/calct
+                w2 = (1 + u_amn)/calct
+                pcv[i] = (w1 * pcv[i]) + (w2 * yi[i] * scat[i])
+                eig[i] = np.linalg.norm(pcv[i])
+                # c)
+                v = pcv[i]
+                norval = v / np.linalg.norm(v)
+                # scat[i+1] = scat[i] - (np.dot(yi[i], norval))
+                # vec2im(255 * pcv[i])
+    eig_pairs = [(np.abs(eig[i]), pcv[i], i) for i in range(len(eig))]
+    eig_pairs.sort(key=lambda x: x[0], reverse=True)
+
+    denom = 0
+    for p in scat:
+        denom += (1/(len(scat) - 1)) * (np.linalg.norm(p) ** 2)
+
+    num = 0
+    ratios = []
+    for l in eig_pairs:
+        num += l[0]
+        ratios.append(num/denom)
+    h = max(ratios)
+    l = min(ratios)
+    idx = 0
+    perc = 0
+    for i, r in enumerate(ratios):
+        perc = (h - r)/(h - l)
+        if perc < 0.95:
+            idx = i
+            knew = i
+            break
+    area1v = [eig_pairs[i] for i in range(idx)]
+
+    # Response Vectors
+    rspy = []
+    for u in allinput:
+        y = []
+        for v in area1v:
+            y.append(np.dot(np.transpose(v[1]), u))
+        rspy.append(np.array(y, dtype='f'))
+
+    mags = []
+    m = 0
+    for i, r in enumerate(y):
+        mags.append(r/np.linalg.norm(r) - rspy[i]/np.linalg.norm(rspy[i]))
+    m = min(mags)
+
+    with open(op, 'w') as report:
+        for i, vp in enumerate(vecs):
+            report.write(
+                "Match for {:<32}: {:<16}, distance: {}\n".format(vp, vp, m))
