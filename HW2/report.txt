@@ -1,7 +1,0 @@
-k                               :                                4
-Percentage variance             :                            94.78%
-Mean filename                   :                        MEAN_.png
-MEF 1 filename:                 :                        1_MEF_paulA1.raw.face.png
-MEF 2 filename:                 :                        2_MEF_paulA2.raw.face.png
-MEF 3 filename:                 :                        3_MEF_paulA4.raw.face.png
-MEF 4 filename:                 :                     4_MEF_mojtabaU2.raw.face.png

@@ -316,6 +316,7 @@ if epochs:
         perc = (h - r)/(h - l)
         if perc < 0.95:
             idx = i
+            k = i
             break
     area1v = [eig_pairs[i] for i in range(idx)]
 
@@ -324,10 +325,23 @@ if epochs:
     except OSError:
         pass
 
-    for v in area1v:
+    # Response Vectors
+    rspy = []
+    for u in allinput:
+        y = []
+        # u = np.array(u, dtype='f')
+        for v in area1v:
+            y.append(np.dot(np.transpose(v[1]), u))
+        rspy.append(np.array(y, dtype='f'))
+    print(len(rspy))
+
+    with open(".tmp", 'w') as ktemp:
+        ktemp.write(str(k))
+
+    for v in rspy:
+        respyv = v/np.linalg.norm(v)
         with open(db, 'ab') as dbv:
-            print("writing")
-            writeprep = array('f', v[1])
+            writeprep = array('f', respyv)
             writeprep.tofile(dbv)
 
     mf = "MEAN_" + ".png"
@@ -349,9 +363,14 @@ if epochs:
             report.write("{:<32}: {:>48}\n".format(strn, nm))
 else:
     # Testing phase if there is no epochs or -l flag.
+    k = 0
+    with open(".tmp", 'r') as ktemp:
+        k = int(ktemp.read())
+        print(k)
+
     with open(db, 'rb') as dbr:
         y = bytearray(dbr.read())
         y = np.frombuffer(y, dtype='f')
-        y = list(chunks(y, dimensions))
-        for v in y:
-            print(v)
+        y = list(chunks(y, k))
+
+        
