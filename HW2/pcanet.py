@@ -10,6 +10,7 @@ This program uses Python.
 """
 
 import os
+from array import array
 from time import strftime
 import numpy as np
 from matplotlib import pyplot as plt
@@ -175,6 +176,14 @@ def vec2im(
     if showim:
         plt.show()
 
+
+def chunks(l, n):
+    """
+    Splits an array into 'n' sized bits.
+    """
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
 # ------------------------------------------------------------------------------
 
 
@@ -229,20 +238,22 @@ filename = arg[1]
 db = arg[2]
 op = arg[3]
 
+files, vecs = getvecnames(filename)
+allinput = []
+
+for t, rawvec in enumerate(files):
+    with open(rawvec, "rb") as bin:
+        data = bytearray(bin.read())
+        ndata = np.frombuffer(data, dtype='u1')
+        allinput.append(ndata)
+
+meanvec = scalenorm(allinput[0], 1)
+dimensions = len(allinput[0])
+
 if epochs:
     # Learning Phase if there is an epochs or -l flag.
     epochs = epochs[0] if type(arg[0]) is list else epochs
-    files, vecs = getvecnames(filename)
-    allinput = []
 
-    for t, rawvec in enumerate(files):
-        with open(rawvec, "rb") as bin:
-            data = bytearray(bin.read())
-            ndata = np.frombuffer(data, dtype='u1')
-            allinput.append(ndata)
-
-    meanvec = scalenorm(allinput[0], 1)
-    dimensions = len(allinput[0])
     scat = [np.zeros(len(allinput[0])) for e in allinput]
     yi = [np.zeros(len(allinput[0])) for e in range(len(allinput[0]))]
     pcv = [np.zeros(len(allinput[0])) for e in allinput]
@@ -308,6 +319,17 @@ if epochs:
             break
     area1v = [eig_pairs[i] for i in range(idx)]
 
+    try:
+        os.remove(db)
+    except OSError:
+        pass
+
+    for v in area1v:
+        with open(db, 'ab') as dbv:
+            print("writing")
+            writeprep = array('f', v[1])
+            writeprep.tofile(dbv)
+
     mf = "MEAN_" + ".png"
     vec2im(meanvec, False, True, mf)
 
@@ -327,4 +349,9 @@ if epochs:
             report.write("{:<32}: {:>48}\n".format(strn, nm))
 else:
     # Testing phase if there is no epochs or -l flag.
-    pass
+    with open(db, 'rb') as dbr:
+        y = bytearray(dbr.read())
+        y = np.frombuffer(y, dtype='f')
+        y = list(chunks(y, dimensions))
+        for v in y:
+            print(v)
