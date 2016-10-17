@@ -28,7 +28,8 @@ def getArguments():
                             action="store",
                             type=int,
                             metavar="epochs",
-                            nargs=1,
+                            const=1,
+                            nargs='?',
                             help="Indicate whether to learn or test.")
     arguments.add_argument(
                             "-f",
@@ -229,7 +230,8 @@ db = arg[2]
 op = arg[3]
 
 if epochs:
-    epochs = epochs[0]
+    # Learning Phase if there is an epochs or -l flag.
+    epochs = epochs[0] if type(arg[0]) is list else epochs
     files, vecs = getvecnames(filename)
     allinput = []
 
@@ -323,3 +325,6 @@ if epochs:
             vec2im(im, False, True, nm)
             strn = "MEF {} filename:".format(i+1)
             report.write("{:<32}: {:>48}\n".format(strn, nm))
+else:
+    # Testing phase if there is no epochs or -l flag.
+    pass
