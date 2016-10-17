@@ -372,5 +372,4 @@ else:
         y = bytearray(dbr.read())
         y = np.frombuffer(y, dtype='f')
         y = list(chunks(y, k))
-
-        
+        y = [np.array(x, dtype='f') for x in y]
