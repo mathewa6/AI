@@ -9,6 +9,8 @@ Written by Adi Mathew.
 This program uses Python.
 """
 
+import os
+from time import strftime
 import numpy as np
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -82,28 +84,6 @@ def plotvec(mx, colors, symbol, labels, title="Title"):
 
     plt.show()
 
-"""
-# ------------------------------------------------------------------------------
-# This is debug code
-np.random.seed(234134784384739784)
-mu_vec1 = np.array([0, 0, 0])
-cov_mat1 = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-class1_sample = np.random.multivariate_normal(mu_vec1, cov_mat1, 20).T
-assert class1_sample.shape == (3, 20), "The matrix has not the dimensions 3x20"
-
-mu_vec2 = np.array([1, 1, 1])
-cov_mat2 = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-class2_sample = np.random.multivariate_normal(mu_vec2, cov_mat2, 20).T
-assert class1_sample.shape == (3, 20), "The matrix has not the dimensions 3x20"
-
-plotvec((class1_sample, class2_sample),
-        ['blue', 'red'],
-        'o',
-        labels=["class1", "class2"],
-        title="Samples for class 1 and class 2")
-# ------------------------------------------------------------------------------
-"""
-
 
 def scalenorm(v, delta=128):
     """
@@ -167,7 +147,14 @@ def meannormal(xinput, mean):
     return np.subtract(xinput, mean)
 
 
-def vec2im(vec, xdim=88, ydim=64):
+def vec2im(
+            vec,
+            showim=False,
+            saveim=False,
+            name="Unnamed",
+            folder=r"Output_" + strftime("%Y%m%d_%H%M%S") + "/",
+            xdim=88,
+            ydim=64):
     """
     Takes a numpy array(vec) and it's unflattened dimensions
     and displays the image contained.
@@ -175,10 +162,17 @@ def vec2im(vec, xdim=88, ydim=64):
     # vec = np.array(vec)
     im = vec.reshape(xdim, ydim)
     plt.rcParams["toolbar"] = "None"
-    fig = plt.figure(figsize=(6, 6), facecolor="white")
+    plt.figure(figsize=(6, 6), facecolor="white")
     plt.imshow(im, plt.cm.gray)
-    plt.colorbar()
-    plt.show()
+    # plt.colorbar()
+    if saveim:
+        f = folder
+        if not os.path.exists(f):
+            os.makedirs(f)
+        plt.savefig(f+name)
+
+    if showim:
+        plt.show()
 
 # ------------------------------------------------------------------------------
 
@@ -189,6 +183,7 @@ def getvecnames(filen, folder=None):
     folder parameter is appended to each filename in the return list.
     """
     fnames = []
+    vnames = []
 
     # Clean up folder name for use with each image in file.
     if "/" in filen:
@@ -213,8 +208,9 @@ def getvecnames(filen, folder=None):
                 # Only after n and tot are stored, append filenames using them.
                 if i > (n - 1) + 2 and n > 0 and tot > 0:
                     line = line.strip()
+                    vnames.append(line)
                     fnames.append(folder+line if folder else line)
-    return fnames
+    return fnames, vnames
 
 
 def writefile(filen, data):
@@ -234,7 +230,7 @@ op = arg[3]
 
 if epochs:
     epochs = epochs[0]
-    files = getvecnames(filename)
+    files, vecs = getvecnames(filename)
     allinput = []
 
     for t, rawvec in enumerate(files):
@@ -302,126 +298,28 @@ if epochs:
     h = max(ratios)
     l = min(ratios)
     idx = 0
+    perc = 0
     for i, r in enumerate(ratios):
-        if (h - r)/(h - l) < 0.95:
+        perc = (h - r)/(h - l)
+        if perc < 0.95:
             idx = i
             break
     area1v = [eig_pairs[i] for i in range(idx)]
 
-    print(area1v)
-    vec2im(meanvec)
-    # vec2im(eig_pairs[4][1])
-"""
-    for t, rawvec in enumerate(files):
-        # if i == 4:
-        #    break
+    mf = "MEAN_" + ".png"
+    vec2im(meanvec, False, True, mf)
 
-        with open(rawvec, "rb") as bin:
-            data = bytearray(bin.read())
-            ndata = np.frombuffer(data, dtype='u1')
-            allinput.append(ndata)
-            norm = scalenorm(ndata, 1)
-
-            if t == 0:
-                meanvec = norm
-                continue
-            else:
-                t1 = 25
-                t2 = 75
-                r = 10
-                c = 2
-                x = t+1
-
-                # meanvec = amnesicmean(meanvec, t, norm, t1, t2, r, c)
-                meanvec = (
-                            np.inner((t/(t+1)), meanvec) +
-                            np.inner((1/t+1), norm))
-
-                scat.append(meannormal(norm, meanvec))
-
-                for i in range(0, x):
-                    # print(i,len(scat))
-                    u = scat[i]
-                    if i == t:
-                        # print(np.array_equal())
-                        # print(j, i)
-                        pcv.append(norm)
-                        eig.append(np.linalg.norm(norm))
-                    else:
-                        v = pcv[i-1]
-                        norval = v / np.linalg.norm(v)
-                        # a)
-                        y = np.inner(u, norval)
-                        # b)
-                        # TODO Check if u_t should be i+1 or i
-                        u_amn = 2  # u_t(t, t1, t2, r, c)
-                        w1 = (t - 1 - u_amn)/t
-                        w2 = (1 + u_amn)/t
-                        pcv[i-1] = (w1 * v) + (w2 * y * u)
-                        eig[i-1] = np.linalg.norm(pcv[i-1])
-                        # c) j or j-1 ?
-                        scat[i-1] = u - (np.inner(y, norval))
-
-    eig_pairs = [(np.abs(eig[i]), pcv[i], i) for i in range(len(eig))]
-    eig_pairs.sort(key=lambda x: x[0], reverse=True)
-
-    denom = 0
-    for p in scat:
-        denom += (1/(len(scat) - 1)) * (np.linalg.norm(p) ** 2)
-    print(denom, len(scat))
-
-    num = 0
-    for l in eig_pairs:
-        num += l[0]
-        ratio = l[0]/denom
-        # if ratio > 0.95:
-        print(l[0], l[2], ratio)
-
-    disp_meanvec = 255 * np.array(meanvec, dtype='f')
-    vec2im(disp_meanvec)
-
-    # print(eig_pairs)
-    for im in allinput:
-        vec2im(im)
-    for im in pcv:
-        disp_pcv = 255 * np.array(pcv[0], dtype='f')
-        vec2im(disp_pcv)
-"""
-# ------------------------------------------------------------------------------
-
-"""
-# ------------------------------------------------------------------------------
-
-files = getvecnames("traininglist.txt", "803Fall07/")
-meanvec = None
-allinput = []
-scat = None
-
-for t, rawvec in enumerate(files):
-    with open(rawvec, "rb") as bin:
-        data = bytearray(bin.read())
-        ndata = np.frombuffer(data, dtype='u1')
-        # norm = scalenorm(ndata)
-        allinput.append(ndata)
-
-dimensions = len(allinput[0])
-
-# meanvec = np.array([np.mean(allinput[x, :]) for x in range(dimensions)])
-meanvec = [0 for x in range(dimensions)]
-for v in allinput:
-    for d in range(dimensions):
-        meanvec[d] += v[d]
-meanvec = np.array(meanvec, dtype='f')
-meanvec /= dimensions
-
-vec2im(meanvec)
-
-scat = np.zeros((dimensions, dimensions))
-for i, v in enumerate(allinput):
-    scat += (v - meanvec).dot((v - meanvec).T)
-
-eig, pcv = np.linalg.eig(scat)
-print(len(eig))
-vec2im(pcv[0])
-# ------------------------------------------------------------------------------
-"""
+    with open(op, 'w') as report:
+        report.write("{:<32}: {:>32}\n".format("k", idx))
+        report.write(
+                    "{:<32}: {:>32.2f}%\n".format(
+                                "Percentage variance",
+                                perc*100.0))
+        report.write("{:<32}: {:>32}\n".format("Mean filename", mf))
+        for i, vp in enumerate(area1v):
+            im = vp[1]
+            f = vecs[vp[2]]
+            nm = str(i+1) + "_MEF_" + f + ".png"
+            vec2im(im, False, True, nm)
+            strn = "MEF {} filename:".format(i+1)
+            report.write("{:<32}: {:>48}\n".format(strn, nm))
