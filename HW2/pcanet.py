@@ -466,5 +466,6 @@ else:
 
     with open(op, 'w') as report:
         for i, vp in enumerate(vecs):
-            report.write(
-                "Match for {:<32}: {:<16}, distance: {}\n".format(vp, vp, m))
+            text = "Match for {:<32}: {:<16}, distance: {}\n".format(vp, vp, m)
+            print(text)
+            report.write(text)
