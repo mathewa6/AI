@@ -304,7 +304,7 @@ if epochs:
                     norval = v / np.linalg.norm(v)
                     yi[i] = np.dot(scat[i], norval)
                     # b)
-                    u_amn = 2  # u_t(t, t1, t2, r, c)
+                    u_amn = u_t(t, 20, 500, 1000, 2)
                     w1 = (calct - 1 - u_amn)/calct
                     w2 = (1 + u_amn)/calct
                     pcv[i] = (w1 * pcv[i]) + (w2 * yi[i] * scat[i])
